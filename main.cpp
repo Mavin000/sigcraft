@@ -309,7 +309,7 @@ int main(int argc, char **argv)
             m = m * translate_mat4(vec3(-0.5, -0.5f, -0.5f));
 
             auto& pipeline = shaders->pipeline;
-            vkCmdBindPipeline(context.cmdbuf(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipeline());
+            vkCmdBindPipeline(context.cmdbuf(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->pipeline());
 
             push_constants.time = ((imr_get_time_nano() / 1000) % 10000000000) / 1000000.0f;
 
