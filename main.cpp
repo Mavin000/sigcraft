@@ -125,6 +125,7 @@ void camera_update(GLFWwindow *, CameraInput *input);
 bool reload_shaders = false;
 std::unique_ptr<imr::Buffer> ubo;
 std::unique_ptr<imr::Image> storage_image;
+std::vector<std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *>> instances;
 
 struct Shaders
 {
@@ -176,8 +177,6 @@ struct Shaders
 
         bottomLevelAS->createBottomLevelAccelerationStructure(geometries);
         topLevelAS = std::make_unique<imr::AccelerationStructure>(d);
-
-        std::vector<std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *>> instances;
 
         VkTransformMatrixKHR transformMatrix = {
             1.0f,
