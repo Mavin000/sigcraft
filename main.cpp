@@ -107,6 +107,12 @@ struct
     float time;
 } push_constants;
 
+struct UniformData
+{
+    mat4 viewInverse;
+    mat4 projInverse;
+} uniformData;
+
 Camera camera;
 CameraFreelookState camera_state = {
     .fly_speed = 100.0f,
@@ -117,7 +123,7 @@ CameraInput camera_input;
 void camera_update(GLFWwindow *, CameraInput *input);
 
 bool reload_shaders = false;
-
+std::unique_ptr<imr::Buffer> ubo;
 std::unique_ptr<imr::Image> storage_image;
 
 struct Shaders
@@ -194,6 +200,7 @@ struct Shaders
         pipeline = std::make_unique<imr::RayTracingPipeline>(d);
 
         storage_image = std::make_unique<imr::Image>(d, VK_IMAGE_TYPE_2D, (VkExtent3D){width, height, 1}, swapchain.format(), (VkImageUsageFlagBits)(VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
+        ubo = std::make_unique<imr::Buffer>(d, sizeof(uniformData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     }
 };
 
@@ -262,6 +269,10 @@ int main(int argc, char **argv)
     {
         fps_counter.tick();
         fps_counter.updateGlfwWindowTitle(window);
+
+        uniformData.projInverse = invert_mat4(camera_get_proj_mat4(&camera, storage_image->size().width, storage_image->size().height));
+        uniformData.viewInverse = invert_mat4(camera_get_pure_view_mat4(&camera));
+        ubo->uploadDataSync(0, sizeof(uniformData), &uniformData);
 
         swapchain.renderFrameSimplified([&](imr::Swapchain::SimplifiedRenderContext &context)
                                         {
@@ -416,7 +427,7 @@ int main(int argc, char **argv)
                 auto bind_helper = pipeline->create_bind_helper();
                 bind_helper->set_acceleration_structure(0, 0, *shaders->topLevelAS);
                 bind_helper->set_storage_image(0, 1, *storage_image);
-                //bind_helper->set_uniform_buffer(0, 2, *ubo);
+                bind_helper->set_uniform_buffer(0, 2, *ubo);
                 bind_helper->commit(cmdbuf);
 
                 context.addCleanupAction([=, &device]()
