@@ -197,7 +197,12 @@ struct Shaders
 
         topLevelAS->createTopLevelAccelerationStructure(instances);
 
-        pipeline = std::make_unique<imr::RayTracingPipeline>(d);
+        std::vector<imr::RayTracingPipeline::RT_Shader> shader;
+        shader.push_back({imr::RayTracingPipeline::ShaderType::raygen, "raygen.rgen"});
+        shader.push_back({imr::RayTracingPipeline::ShaderType::miss, "miss.rmiss"});
+        shader.push_back({imr::RayTracingPipeline::ShaderType::closestHit, "closesthit.rchit"});
+
+        pipeline = std::make_unique<imr::RayTracingPipeline>(d, shader);
 
         storage_image = std::make_unique<imr::Image>(d, VK_IMAGE_TYPE_2D, (VkExtent3D){width, height, 1}, swapchain.format(), (VkImageUsageFlagBits)(VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
         ubo = std::make_unique<imr::Buffer>(d, sizeof(uniformData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -390,34 +395,10 @@ int main(int argc, char **argv)
                     // vkCmdDraw(cmdbuf, mesh->num_verts, 1, 0, 0);
                 }
 
-
-                const uint32_t handleSizeAligned = pipeline->getHandleSizeAligned();
-
                 auto &vk = device->dispatch;
 
                 auto &image = context.image();
                 auto cmdbuf = context.cmdbuf();
-
-                /*
-                    Setup the buffer regions pointing to the shaders in our shader binding table
-                */
-
-                VkStridedDeviceAddressRegionKHR raygenShaderSbtEntry{};
-                raygenShaderSbtEntry.deviceAddress = pipeline->raygenShaderBindingTable()->device_address();
-                raygenShaderSbtEntry.stride = handleSizeAligned;
-                raygenShaderSbtEntry.size = handleSizeAligned;
-
-                VkStridedDeviceAddressRegionKHR missShaderSbtEntry{};
-                missShaderSbtEntry.deviceAddress = pipeline->missShaderBindingTable()->device_address();
-                missShaderSbtEntry.stride = handleSizeAligned;
-                missShaderSbtEntry.size = handleSizeAligned;
-
-                VkStridedDeviceAddressRegionKHR hitShaderSbtEntry{};
-                hitShaderSbtEntry.deviceAddress = pipeline->hitShaderBindingTable()->device_address();
-                hitShaderSbtEntry.stride = handleSizeAligned;
-                hitShaderSbtEntry.size = handleSizeAligned;
-
-                VkStridedDeviceAddressRegionKHR callableShaderSbtEntry{};
 
                 /*
                     Dispatch the ray tracing commands
@@ -456,15 +437,7 @@ int main(int argc, char **argv)
                     *storage_image,
                     VK_IMAGE_LAYOUT_GENERAL);
 
-                vk.cmdTraceRaysKHR(
-                    cmdbuf,
-                    &raygenShaderSbtEntry,
-                    &missShaderSbtEntry,
-                    &hitShaderSbtEntry,
-                    &callableShaderSbtEntry,
-                    storage_image->size().width,
-                    storage_image->size().height,
-                    1);
+                pipeline->traceRays(cmdbuf, storage_image->size().width, storage_image->size().height);
 
                 /*
                     Copy ray tracing output to swap chain image
