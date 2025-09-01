@@ -332,9 +332,11 @@ int main(int argc, char **argv)
             push_constants.matrix = m;
 
             auto load_chunk = [&](int cx, int cz) {
-                auto loaded = world.get_loaded_chunk(cx, cz);
+                Chunk* loaded = world.get_loaded_chunk(cx, cz);
                 if (!loaded)
                     world.load_chunk(cx, cz);
+                    instances.emplace_back(VkTransformMatrixKHR{}, ...);
+
                 else {
                     if (loaded->mesh)
                         return;
