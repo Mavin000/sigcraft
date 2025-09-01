@@ -152,12 +152,27 @@ Chunk::Chunk(Region &r, int cx, int cz) : region(r), cx(cx), cz(cz)
         {
 
             load_from_mcchunk(&data, enkl_chunk);
+
+            VkTransformMatrixKHR transformMatrix = {
+                1.0f,
+                0.0f,
+                0.0f,
+                0.0f,
+                0.0f,
+                1.0f,
+                0.0f,
+                0.0f,
+                0.0f,
+                0.0f,
+                1.0f,
+                0.0f,
+            };
             std::vector<imr::AccelerationStructure::TriangleGeometry> geometry = {
                 ,
                 ,
+                mesh.numverts,
                 ,
-                ,
-            };
+                transformMatrix};
             accel->createBottomLevelAccelerationStructure(geometry);
         }
     }
