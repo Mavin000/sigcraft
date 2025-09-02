@@ -333,10 +333,9 @@ int main(int argc, char **argv)
 
             auto load_chunk = [&](int cx, int cz) {
                 Chunk* loaded = world.get_loaded_chunk(cx, cz);
-                if (!loaded)
+                if (!loaded){
                     world.load_chunk(cx, cz);
-                    instances.emplace_back(VkTransformMatrixKHR{}, ...);
-
+                }
                 else {
                     if (loaded->mesh)
                         return;
@@ -355,8 +354,47 @@ int main(int argc, char **argv)
                                     all_neighbours_loaded = false;
                             }
                         }
-                        if (all_neighbours_loaded)
+                        if (all_neighbours_loaded){
                             loaded->mesh = std::make_unique<ChunkMesh>(*device, n);
+                            loaded->accel = std::make_unique<imr::AccelerationStructure>(*device);
+
+                            VkTransformMatrixKHR transformMmatrix = {
+                                1.0f,
+                                0.0f,
+                                0.0f,
+                                0.0f,
+                                0.0f,
+                                1.0f,
+                                0.0f,
+                                0.0f,
+                                0.0f,
+                                0.0f,
+                                1.0f,
+                                0.0f,
+                            };
+                            std::vector<imr::AccelerationStructure::TriangleGeometry> geometry = {{loaded->mesh->buf->device_address(), loaded->mesh->iBuf->device_address(),
+                                                                                                   loaded->mesh->num_verts, loaded->mesh->num_verts * 3,
+                                                                                                   transformMmatrix}};
+                            loaded->accel->createBottomLevelAccelerationStructure(geometry);
+
+                            VkTransformMatrixKHR transformMatrix = {
+                                1.0f,
+                                0.0f,
+                                0.0f,
+                                0.0f,
+                                0.0f,
+                                1.0f,
+                                0.0f,
+                                0.0f,
+                                0.0f,
+                                0.0f,
+                                1.0f,
+                                0.0f,
+                            };
+
+                            
+                            instances.emplace_back(transformMatrix, loaded->accel.get());
+                        }
                     }
                 };
 

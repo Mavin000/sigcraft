@@ -43,8 +43,6 @@ struct Chunk
     std::unique_ptr<ChunkMesh> mesh;
     std::unique_ptr<imr::AccelerationStructure> accel;
 
-    imr::AccelerationStructure *get_acceleration_structure(int cx, int cz);
-
     Chunk(Region &, int x, int z);
     Chunk(const Chunk &) = delete;
     ~Chunk();

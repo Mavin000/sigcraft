@@ -5,17 +5,21 @@
 
 #include <cstddef>
 
-struct ChunkNeighbors {
-    const ChunkData* neighbours[3][3];
+struct ChunkNeighbors
+{
+    const ChunkData *neighbours[3][3];
 };
 
-struct ChunkMesh {
+struct ChunkMesh
+{
     std::unique_ptr<imr::Buffer> buf;
+    std::unique_ptr<imr::Buffer> iBuf;
     size_t num_verts;
 
-    ChunkMesh(imr::Device&, ChunkNeighbors& n);
+    ChunkMesh(imr::Device &, ChunkNeighbors &n);
 
-    struct Vertex {
+    struct Vertex
+    {
         int16_t vx, vy, vz;
         uint8_t tt;
         uint8_t ss;
