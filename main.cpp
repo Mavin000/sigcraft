@@ -8,6 +8,7 @@
 #include "nasl/nasl_mat.h"
 
 #include "camera.h"
+#include <iostream>
 
 using namespace nasl;
 
@@ -159,18 +160,9 @@ struct Shaders
         {
             // Setup identity transform matrix
             VkTransformMatrixKHR transformMatrix = {
-                1.0f,
-                0.0f,
-                0.0f,
-                0.0f,
-                0.0f,
-                1.0f,
-                0.0f,
-                0.0f,
-                0.0f,
-                0.0f,
-                1.0f,
-                0 * 5.0f,
+                1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0 * 5.0f,
             };
             geometries.push_back({vertexBuffer->device_address(), indexBuffer->device_address() + i * sizeof(cube.tris[i]), 24, 2, transformMatrix});
         }
@@ -179,18 +171,9 @@ struct Shaders
         topLevelAS = std::make_unique<imr::AccelerationStructure>(d);
 
         VkTransformMatrixKHR transformMatrix = {
-            1.0f,
-            0.0f,
-            0.0f,
-            0.0f,
-            0.0f,
-            1.0f,
-            0.0f,
-            0.0f,
-            0.0f,
-            0.0f,
-            1.0f,
-            0.0f,
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
         };
         instances.emplace_back(transformMatrix, &*bottomLevelAS);
 
@@ -278,7 +261,7 @@ int main(int argc, char **argv)
         uniformData.viewInverse = invert_mat4(camera_get_pure_view_mat4(&camera));
         ubo->uploadDataSync(0, sizeof(uniformData), &uniformData);
 
-        swapchain.renderFrameSimplified([&](imr::Swapchain::SimplifiedRenderContext &context)
+        swapchain.renderFrameSimplified([&](imr::Swapchain::SimplifiedRenderContext &context) 
                                         {
             camera_update(window, &camera_input);
             camera_move_freelook(&camera, &camera_input, &camera_state, delta);
@@ -324,11 +307,8 @@ int main(int argc, char **argv)
             m = m * translate_mat4(vec3(-0.5, -0.5f, -0.5f));
 
             auto& pipeline = shaders->pipeline;
-            vkCmdBindPipeline(context.cmdbuf(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->pipeline());
 
             push_constants.time = ((imr_get_time_nano() / 1000) % 10000000000) / 1000000.0f;
-
-
             push_constants.matrix = m;
 
             auto load_chunk = [&](int cx, int cz) {
@@ -336,177 +316,176 @@ int main(int argc, char **argv)
                 if (!loaded){
                     world.load_chunk(cx, cz);
                 }
-                else {
+                loaded = world.get_loaded_chunk(cx, cz);
+                assert(loaded);
+
+                if (loaded->mesh)
+                    return;
+
+                bool all_neighbours_loaded = true;
+                ChunkNeighbors n = {};
+                for (int dx = -1; dx < 2; dx++) {
+                    for (int dz = -1; dz < 2; dz++) {
+                        int nx = cx + dx;
+                        int nz = cz + dz;
+
+                        auto neighborChunk = world.get_loaded_chunk(nx, nz);
+                        if (neighborChunk)
+                            n.neighbours[dx + 1][dz + 1] = &neighborChunk->data;
+                        else
+                            all_neighbours_loaded = false;
+                    }
+                }
+                if (all_neighbours_loaded){
+                    loaded->mesh = std::make_unique<ChunkMesh>(*device, n);
                     if (loaded->mesh)
-                        return;
+                        std::cout << "here mesh exists" << std::endl;
+                    else
+                        std::cout << "also no mesh" << std::endl;
 
-                    bool all_neighbours_loaded = true;
-                    ChunkNeighbors n = {};
-                    for (int dx = -1; dx < 2; dx++) {
-                        for (int dz = -1; dz < 2; dz++) {
-                            int nx = cx + dx;
-                            int nz = cz + dz;
+                    VkTransformMatrixKHR transformMatrix = {
+                        1.0f, 0.0f, 0.0f, 0.0f,
+                        0.0f, 1.0f, 0.0f, 0.0f,
+                        0.0f, 0.0f, 1.0f, 0.0f,
+                    };
 
-                            auto neighborChunk = world.get_loaded_chunk(nx, nz);
-                            if (neighborChunk)
-                                    n.neighbours[dx + 1][dz + 1] = &neighborChunk->data;
-                                else
-                                    all_neighbours_loaded = false;
-                            }
-                        }
-                        if (all_neighbours_loaded){
-                            loaded->mesh = std::make_unique<ChunkMesh>(*device, n);
-                            loaded->accel = std::make_unique<imr::AccelerationStructure>(*device);
-
-                            VkTransformMatrixKHR transformMmatrix = {
-                                1.0f,
-                                0.0f,
-                                0.0f,
-                                0.0f,
-                                0.0f,
-                                1.0f,
-                                0.0f,
-                                0.0f,
-                                0.0f,
-                                0.0f,
-                                1.0f,
-                                0.0f,
-                            };
-                            std::vector<imr::AccelerationStructure::TriangleGeometry> geometry = {{loaded->mesh->buf->device_address(), loaded->mesh->iBuf->device_address(),
-                                                                                                   loaded->mesh->num_verts, loaded->mesh->num_verts * 3,
-                                                                                                   transformMmatrix}};
-                            loaded->accel->createBottomLevelAccelerationStructure(geometry);
-
-                            VkTransformMatrixKHR transformMatrix = {
-                                1.0f,
-                                0.0f,
-                                0.0f,
-                                0.0f,
-                                0.0f,
-                                1.0f,
-                                0.0f,
-                                0.0f,
-                                0.0f,
-                                0.0f,
-                                1.0f,
-                                0.0f,
-                            };
-
-                            
-                            instances.emplace_back(transformMatrix, loaded->accel.get());
-                        }
+                    std::vector<imr::AccelerationStructure::TriangleGeometry> geometry = {{loaded->mesh->buf->device_address(), loaded->mesh->iBuf->device_address(),
+                                                                                           loaded->mesh->num_verts, static_cast<uint32_t>(loaded->mesh->num_verts * 3),
+                                                                                           transformMatrix}};
+                    if (!loaded->accel) {
+                        loaded->accel = std::make_unique<imr::AccelerationStructure>(*device);
+                        loaded->accel->createBottomLevelAccelerationStructure(geometry);
                     }
-                };
-
-                int player_chunk_x = camera.position.x / 16;
-                int player_chunk_z = camera.position.z / 16;
-
-                int radius = 24;
-                for (int dx = -radius; dx <= radius; dx++) {
-                    for (int dz = -radius; dz <= radius; dz++) {
-                        load_chunk(player_chunk_x + dx, player_chunk_z + dz);
-                    }
+                    
+                    instances.emplace_back(transformMatrix, loaded->accel.get());
                 }
 
-                for (auto chunk : world.loaded_chunks()) {
-                    if (abs(chunk->cx - player_chunk_x) > radius || abs(chunk->cz - player_chunk_z) > radius) {
-                        std::unique_ptr<ChunkMesh> stolen = std::move(chunk->mesh);
-                        if (stolen) {
-                            ChunkMesh* released = stolen.release();
-                            context.frame().addCleanupAction([=]() {
-                                delete released;
-                            });
-                        }
-                        world.unload_chunk(chunk);
-                        continue;
+                // TODO: this always fails, no mesh created yet
+                // assert(loaded->mesh);
+            };
+
+            int player_chunk_x = camera.position.x / 16;
+            int player_chunk_z = camera.position.z / 16;
+
+            int radius = 24;
+            // for (int dx = -radius; dx <= radius; dx++) {
+            //     for (int dz = -radius; dz <= radius; dz++) {
+            //         load_chunk(player_chunk_x + dx, player_chunk_z + dz);
+            //     }
+            // }
+
+            // testing just one loaded chunk for now
+            load_chunk(player_chunk_x, player_chunk_z);
+
+            for (auto chunk : world.loaded_chunks()) {
+                if (abs(chunk->cx - player_chunk_x) > radius || abs(chunk->cz - player_chunk_z) > radius) {
+                    std::unique_ptr<ChunkMesh> stolen = std::move(chunk->mesh);
+                    if (stolen) {
+                        ChunkMesh* released = stolen.release();
+                        context.frame().addCleanupAction([=]() {
+                            delete released;
+                        });
                     }
-
-                    // auto& mesh = chunk->mesh;
-                    // if (!mesh || mesh->num_verts == 0)
-                    //     continue;
-
-                    // push_constants.chunk_position = { chunk->cx, 0, chunk->cz };
-                    // vkCmdPushConstants(cmdbuf, pipeline->layout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push_constants), &push_constants);
-
-                    // vkCmdBindVertexBuffers(cmdbuf, 0, 1, &mesh->buf->handle, tmpPtr((VkDeviceSize) 0));
-
-                    // assert(mesh->num_verts > 0);
-                    // vkCmdDraw(cmdbuf, mesh->num_verts, 1, 0, 0);
+                    world.unload_chunk(chunk);
+                    continue;
                 }
 
-                auto &vk = device->dispatch;
+                auto& mesh = chunk->mesh;
+                if (!mesh || mesh->num_verts == 0) {
+                    // std::cout << "chunk with 0 vertices" << std::endl;
+                    continue;
+                }
 
-                auto &image = context.image();
-                auto cmdbuf = context.cmdbuf();
+                // push_constants.chunk_position = { chunk->cx, 0, chunk->cz };
+                // vkCmdPushConstants(cmdbuf, pipeline->layout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push_constants), &push_constants);
 
-                /*
-                    Dispatch the ray tracing commands
-                */
-                vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->pipeline());
+                // vkCmdBindVertexBuffers(cmdbuf, 0, 1, &mesh->buf->handle, tmpPtr((VkDeviceSize) 0));
 
-                auto bind_helper = pipeline->create_bind_helper();
-                bind_helper->set_acceleration_structure(0, 0, *shaders->topLevelAS);
-                bind_helper->set_storage_image(0, 1, *storage_image);
-                bind_helper->set_uniform_buffer(0, 2, *ubo);
-                bind_helper->commit(cmdbuf);
+                // assert(mesh->num_verts > 0);
+                // vkCmdDraw(cmdbuf, mesh->num_verts, 1, 0, 0);
+            }
 
-                context.addCleanupAction([=, &device]()
-                                         { delete bind_helper; });
+            // recreate topLevelAS every frame using the chunks that are in instances
+            // TODO: probably reset 'instances' every frame as well
+            // since the bottomLevelAS are stored in the chunks, 
+            // those do not need to be recreated
+            shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
+            shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
 
-                auto setImageLayout = [&](imr::Image &image, VkImageLayout new_layout, VkImageLayout old_layout = VK_IMAGE_LAYOUT_UNDEFINED)
-                {
-                    vkCmdPipelineBarrier2(cmdbuf, tmpPtr((VkDependencyInfo){
-                                                      .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-                                                      .dependencyFlags = 0,
-                                                      .imageMemoryBarrierCount = 1,
-                                                      .pImageMemoryBarriers = tmpPtr((VkImageMemoryBarrier2){
-                                                          .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-                                                          .srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                                          .srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT,
-                                                          .dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                                          .dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT,
-                                                          .oldLayout = old_layout,
-                                                          .newLayout = new_layout,
-                                                          .image = image.handle(),
-                                                          .subresourceRange = image.whole_image_subresource_range()})}));
-                };
+            auto &vk = device->dispatch;
 
-                // Transition ray tracing output image back to general layout
-                setImageLayout(
+            auto &image = context.image();
+            auto cmdbuf = context.cmdbuf();
+
+            /*
+               Dispatch the ray tracing commands
+               */
+            vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->pipeline());
+
+            auto bind_helper = pipeline->create_bind_helper();
+            bind_helper->set_acceleration_structure(0, 0, *shaders->topLevelAS);
+            bind_helper->set_storage_image(0, 1, *storage_image);
+            bind_helper->set_uniform_buffer(0, 2, *ubo);
+            bind_helper->commit(cmdbuf);
+
+            context.addCleanupAction([=, &device]()
+                    { delete bind_helper; });
+
+            auto setImageLayout = [&](imr::Image &image, VkImageLayout new_layout, VkImageLayout old_layout = VK_IMAGE_LAYOUT_UNDEFINED)
+            {
+                vkCmdPipelineBarrier2(cmdbuf, tmpPtr((VkDependencyInfo){
+                            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+                            .dependencyFlags = 0,
+                            .imageMemoryBarrierCount = 1,
+                            .pImageMemoryBarriers = tmpPtr((VkImageMemoryBarrier2){
+                                    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                                    .srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                    .srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT,
+                                    .dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                    .dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT,
+                                    .oldLayout = old_layout,
+                                    .newLayout = new_layout,
+                                    .image = image.handle(),
+                                    .subresourceRange = image.whole_image_subresource_range()})}));
+            };
+
+            // Transition ray tracing output image back to general layout
+            setImageLayout(
                     *storage_image,
                     VK_IMAGE_LAYOUT_GENERAL);
 
-                pipeline->traceRays(cmdbuf, storage_image->size().width, storage_image->size().height);
+            pipeline->traceRays(cmdbuf, storage_image->size().width, storage_image->size().height);
 
-                /*
-                    Copy ray tracing output to swap chain image
-                */
+            /*
+               Copy ray tracing output to swap chain image
+               */
 
-                // Prepare current swap chain image as transfer destination
-                setImageLayout(context.image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            // Prepare current swap chain image as transfer destination
+            setImageLayout(context.image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-                // Prepare ray tracing output image as transfer source
-                setImageLayout(*storage_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+            // Prepare ray tracing output image as transfer source
+            setImageLayout(*storage_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
 
-                VkImageCopy copyRegion{};
-                copyRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-                copyRegion.srcOffset = {0, 0, 0};
-                copyRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-                copyRegion.dstOffset = {0, 0, 0};
-                copyRegion.extent = {storage_image->size().width, storage_image->size().height, 1};
-                vkCmdCopyImage(cmdbuf, storage_image->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+            VkImageCopy copyRegion{};
+            copyRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+            copyRegion.srcOffset = {0, 0, 0};
+            copyRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+            copyRegion.dstOffset = {0, 0, 0};
+            copyRegion.extent = {storage_image->size().width, storage_image->size().height, 1};
+            vkCmdCopyImage(cmdbuf, storage_image->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-                // Transition swap chain image back for presentation
-                setImageLayout(
+            // Transition swap chain image back for presentation
+            setImageLayout(
                     context.image(),
                     VK_IMAGE_LAYOUT_GENERAL,
                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-                auto now = imr_get_time_nano();
-                delta = ((float)((now - prev_frame) / 1000L)) / 1000000.0f;
-                prev_frame = now;
+            auto now = imr_get_time_nano();
+            delta = ((float)((now - prev_frame) / 1000L)) / 1000000.0f;
+            prev_frame = now;
 
-                glfwPollEvents(); });
+            glfwPollEvents(); 
+        });
     }
 
     swapchain.drain();
