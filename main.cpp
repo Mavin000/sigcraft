@@ -263,6 +263,7 @@ int main(int argc, char **argv)
 
         swapchain.renderFrameSimplified([&](imr::Swapchain::SimplifiedRenderContext &context) 
                                         {
+            auto cmdbuf = context.cmdbuf();
             camera_update(window, &camera_input);
             camera_move_freelook(&camera, &camera_input, &camera_state, delta);
 
@@ -278,7 +279,6 @@ int main(int argc, char **argv)
                 VkImageUsageFlagBits imageFlags = static_cast<VkImageUsageFlagBits>(VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
                 storage_image = std::make_unique<imr::Image>(*device, VK_IMAGE_TYPE_2D, context.image().size(), swapchain.format(), imageFlags);
-                auto cmdbuf = context.cmdbuf();
                 device->dispatch.cmdPipelineBarrier2KHR(cmdbuf, tmpPtr((VkDependencyInfo) {
                             .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
                             .dependencyFlags = 0,
@@ -322,6 +322,7 @@ int main(int argc, char **argv)
                 if (loaded->mesh)
                     return;
 
+                // std::cout << "loading " << cx << ", " << cz << std::endl;
                 bool all_neighbours_loaded = true;
                 ChunkNeighbors n = {};
                 for (int dx = -1; dx < 2; dx++) {
@@ -336,12 +337,8 @@ int main(int argc, char **argv)
                             all_neighbours_loaded = false;
                     }
                 }
-                if (all_neighbours_loaded){
+                if (all_neighbours_loaded) {
                     loaded->mesh = std::make_unique<ChunkMesh>(*device, n);
-                    if (loaded->mesh)
-                        std::cout << "here mesh exists" << std::endl;
-                    else
-                        std::cout << "also no mesh" << std::endl;
 
                     VkTransformMatrixKHR transformMatrix = {
                         1.0f, 0.0f, 0.0f, 0.0f,
@@ -359,23 +356,17 @@ int main(int argc, char **argv)
                     
                     instances.emplace_back(transformMatrix, loaded->accel.get());
                 }
-
-                // TODO: this always fails, no mesh created yet
-                // assert(loaded->mesh);
             };
 
             int player_chunk_x = camera.position.x / 16;
             int player_chunk_z = camera.position.z / 16;
 
-            int radius = 24;
-            // for (int dx = -radius; dx <= radius; dx++) {
-            //     for (int dz = -radius; dz <= radius; dz++) {
-            //         load_chunk(player_chunk_x + dx, player_chunk_z + dz);
-            //     }
-            // }
-
-            // testing just one loaded chunk for now
-            load_chunk(player_chunk_x, player_chunk_z);
+            int radius = 3;
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    load_chunk(player_chunk_x + dx, player_chunk_z + dz);
+                }
+            }
 
             for (auto chunk : world.loaded_chunks()) {
                 if (abs(chunk->cx - player_chunk_x) > radius || abs(chunk->cz - player_chunk_z) > radius) {
@@ -397,7 +388,7 @@ int main(int argc, char **argv)
                 }
 
                 // push_constants.chunk_position = { chunk->cx, 0, chunk->cz };
-                // vkCmdPushConstants(cmdbuf, pipeline->layout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push_constants), &push_constants);
+                // vkCmdPushConstants(cmdbuf, pipeline->layout(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 0, sizeof(push_constants), &push_constants);
 
                 // vkCmdBindVertexBuffers(cmdbuf, 0, 1, &mesh->buf->handle, tmpPtr((VkDeviceSize) 0));
 
@@ -412,10 +403,7 @@ int main(int argc, char **argv)
             shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
             shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
 
-            auto &vk = device->dispatch;
-
             auto &image = context.image();
-            auto cmdbuf = context.cmdbuf();
 
             /*
                Dispatch the ray tracing commands
@@ -486,8 +474,8 @@ int main(int argc, char **argv)
 
             glfwPollEvents(); 
         });
+        vk.deviceWaitIdle();
     }
-
     swapchain.drain();
     return 0;
 }
