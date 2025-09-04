@@ -162,7 +162,7 @@ struct Shaders
             VkTransformMatrixKHR transformMatrix = {
                 1.0f, 0.0f, 0.0f, 0.0f,
                 0.0f, 1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 1.0f, 0 * 5.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
             };
             geometries.push_back({vertexBuffer->device_address(), indexBuffer->device_address() + i * sizeof(cube.tris[i]), 24, 2, transformMatrix});
         }
@@ -344,9 +344,9 @@ int main(int argc, char **argv)
                         std::cout << "also no mesh" << std::endl;
 
                     VkTransformMatrixKHR transformMatrix = {
-                        1.0f, 0.0f, 0.0f, 0.0f,
+                        1.0f, 0.0f, 0.0f, float(cx *32),
                         0.0f, 1.0f, 0.0f, 0.0f,
-                        0.0f, 0.0f, 1.0f, 0.0f,
+                        0.0f, 0.0f, 1.0f, float(cx *32),
                     };
 
                     std::vector<imr::AccelerationStructure::TriangleGeometry> geometry = {{loaded->mesh->buf->device_address(), loaded->mesh->iBuf->device_address(),
