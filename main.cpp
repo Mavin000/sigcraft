@@ -252,6 +252,58 @@ int main(int argc, char **argv)
 
     auto &vk = device->dispatch;
 
+    auto load_chunk = [&](int cx, int cz) {
+        Chunk* loaded = world.get_loaded_chunk(cx, cz);
+        if (!loaded){
+            world.load_chunk(cx, cz);
+        }
+        loaded = world.get_loaded_chunk(cx, cz);
+        assert(loaded);
+
+        if (loaded->mesh)
+            return;
+
+        bool all_neighbours_loaded = true;
+        ChunkNeighbors n = {};
+        for (int dx = -1; dx < 2; dx++) {
+            for (int dz = -1; dz < 2; dz++) {
+                int nx = cx + dx;
+                int nz = cz + dz;
+
+                auto neighborChunk = world.get_loaded_chunk(nx, nz);
+                if (neighborChunk)
+                    n.neighbours[dx + 1][dz + 1] = &neighborChunk->data;
+                else
+                    all_neighbours_loaded = false;
+            }
+        }
+        if (all_neighbours_loaded || true) {
+            loaded->mesh = std::make_unique<ChunkMesh>(*device, n);
+
+            VkTransformMatrixKHR transformMatrix = {
+                1.0f, 0.0f, 0.0f, float(cx *32),
+                0.0f, 1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, float(cx *32),
+            };
+
+            std::vector<imr::AccelerationStructure::TriangleGeometry> geometry = {{loaded->mesh->buf->device_address(), loaded->mesh->iBuf->device_address(),
+                loaded->mesh->num_verts, static_cast<uint32_t>(loaded->mesh->num_verts * 3),
+                transformMatrix}};
+            if (!loaded->accel) {
+                loaded->accel = std::make_unique<imr::AccelerationStructure>(*device);
+                loaded->accel->createBottomLevelAccelerationStructure(geometry);
+            }
+
+            instances.emplace_back(transformMatrix, loaded->accel.get());
+        }
+        assert(loaded->mesh);
+    };
+
+    load_chunk(0, 0);
+
+    shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
+    shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
+
     while (!glfwWindowShouldClose(window))
     {
         fps_counter.tick();
@@ -310,98 +362,6 @@ int main(int argc, char **argv)
 
             push_constants.time = ((imr_get_time_nano() / 1000) % 10000000000) / 1000000.0f;
             push_constants.matrix = m;
-
-            auto load_chunk = [&](int cx, int cz) {
-                Chunk* loaded = world.get_loaded_chunk(cx, cz);
-                if (!loaded){
-                    world.load_chunk(cx, cz);
-                }
-                loaded = world.get_loaded_chunk(cx, cz);
-                assert(loaded);
-
-                if (loaded->mesh)
-                    return;
-
-                // std::cout << "loading " << cx << ", " << cz << std::endl;
-                bool all_neighbours_loaded = true;
-                ChunkNeighbors n = {};
-                for (int dx = -1; dx < 2; dx++) {
-                    for (int dz = -1; dz < 2; dz++) {
-                        int nx = cx + dx;
-                        int nz = cz + dz;
-
-                        auto neighborChunk = world.get_loaded_chunk(nx, nz);
-                        if (neighborChunk)
-                            n.neighbours[dx + 1][dz + 1] = &neighborChunk->data;
-                        else
-                            all_neighbours_loaded = false;
-                    }
-                }
-                if (all_neighbours_loaded) {
-                    loaded->mesh = std::make_unique<ChunkMesh>(*device, n);
-
-                    VkTransformMatrixKHR transformMatrix = {
-                        1.0f, 0.0f, 0.0f, float(cx *32),
-                        0.0f, 1.0f, 0.0f, 0.0f,
-                        0.0f, 0.0f, 1.0f, float(cx *32),
-                    };
-
-                    std::vector<imr::AccelerationStructure::TriangleGeometry> geometry = {{loaded->mesh->buf->device_address(), loaded->mesh->iBuf->device_address(),
-                                                                                           loaded->mesh->num_verts, static_cast<uint32_t>(loaded->mesh->num_verts * 3),
-                                                                                           transformMatrix}};
-                    if (!loaded->accel) {
-                        loaded->accel = std::make_unique<imr::AccelerationStructure>(*device);
-                        loaded->accel->createBottomLevelAccelerationStructure(geometry);
-                    }
-                    
-                    instances.emplace_back(transformMatrix, loaded->accel.get());
-                }
-            };
-
-            int player_chunk_x = camera.position.x / 16;
-            int player_chunk_z = camera.position.z / 16;
-
-            int radius = 3;
-            for (int dx = -radius; dx <= radius; dx++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    load_chunk(player_chunk_x + dx, player_chunk_z + dz);
-                }
-            }
-
-            for (auto chunk : world.loaded_chunks()) {
-                if (abs(chunk->cx - player_chunk_x) > radius || abs(chunk->cz - player_chunk_z) > radius) {
-                    std::unique_ptr<ChunkMesh> stolen = std::move(chunk->mesh);
-                    if (stolen) {
-                        ChunkMesh* released = stolen.release();
-                        context.frame().addCleanupAction([=]() {
-                            delete released;
-                        });
-                    }
-                    world.unload_chunk(chunk);
-                    continue;
-                }
-
-                auto& mesh = chunk->mesh;
-                if (!mesh || mesh->num_verts == 0) {
-                    // std::cout << "chunk with 0 vertices" << std::endl;
-                    continue;
-                }
-
-                // push_constants.chunk_position = { chunk->cx, 0, chunk->cz };
-                // vkCmdPushConstants(cmdbuf, pipeline->layout(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 0, sizeof(push_constants), &push_constants);
-
-                // vkCmdBindVertexBuffers(cmdbuf, 0, 1, &mesh->buf->handle, tmpPtr((VkDeviceSize) 0));
-
-                // assert(mesh->num_verts > 0);
-                // vkCmdDraw(cmdbuf, mesh->num_verts, 1, 0, 0);
-            }
-
-            // recreate topLevelAS every frame using the chunks that are in instances
-            // TODO: probably reset 'instances' every frame as well
-            // since the bottomLevelAS are stored in the chunks, 
-            // those do not need to be recreated
-            shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
-            shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
 
             auto &image = context.image();
 
@@ -474,7 +434,7 @@ int main(int argc, char **argv)
 
             glfwPollEvents(); 
         });
-        vk.deviceWaitIdle();
+        // vk.deviceWaitIdle();
     }
     swapchain.drain();
     return 0;
