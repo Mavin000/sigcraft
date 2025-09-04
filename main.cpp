@@ -138,11 +138,13 @@ struct Shaders
     std::unique_ptr<imr::Buffer> vertexBuffer;
     std::unique_ptr<imr::Buffer> indexBuffer;
     uint32_t indexCount;
+    Cube cube;
+    std::vector<imr::AccelerationStructure::TriangleGeometry> geometries;
 
     Shaders(imr::Device &d, imr::Swapchain &swapchain)
     {
         // test
-        auto cube = make_cube();
+        cube = make_cube();
 
         indexCount = static_cast<uint32_t>(0);
         // TODO add vertices and points
@@ -155,7 +157,6 @@ struct Shaders
                                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &cube.tris);
 
         bottomLevelAS = std::make_unique<imr::AccelerationStructure>(d);
-        std::vector<imr::AccelerationStructure::TriangleGeometry> geometries;
         for (int i = 0; i < 6; i++)
         {
             // Setup identity transform matrix
@@ -343,12 +344,12 @@ int main(int argc, char **argv)
                     VkTransformMatrixKHR transformMatrix = {
                         1.0f, 0.0f, 0.0f, float(cx *32),
                         0.0f, 1.0f, 0.0f, 0.0f,
-                        0.0f, 0.0f, 1.0f, float(cx *32),
+                        0.0f, 0.0f, 1.0f, float(cz *32),
                     };
 
-                    std::vector<imr::AccelerationStructure::TriangleGeometry> geometry = {{loaded->mesh->buf->device_address(), loaded->mesh->iBuf->device_address(),
-                                                                                           loaded->mesh->num_verts, static_cast<uint32_t>(loaded->mesh->num_verts * 3),
-                                                                                           transformMatrix}};
+
+
+                    std::vector<imr::AccelerationStructure::TriangleGeometry> geometry = {shaders->geometries};
                     if (!loaded->accel) {
                         loaded->accel = std::make_unique<imr::AccelerationStructure>(*device);
                         loaded->accel->createBottomLevelAccelerationStructure(geometry);
@@ -368,33 +369,7 @@ int main(int argc, char **argv)
                 }
             }
 
-            for (auto chunk : world.loaded_chunks()) {
-                if (abs(chunk->cx - player_chunk_x) > radius || abs(chunk->cz - player_chunk_z) > radius) {
-                    std::unique_ptr<ChunkMesh> stolen = std::move(chunk->mesh);
-                    if (stolen) {
-                        ChunkMesh* released = stolen.release();
-                        context.frame().addCleanupAction([=]() {
-                            delete released;
-                        });
-                    }
-                    world.unload_chunk(chunk);
-                    continue;
-                }
-
-                auto& mesh = chunk->mesh;
-                if (!mesh || mesh->num_verts == 0) {
-                    // std::cout << "chunk with 0 vertices" << std::endl;
-                    continue;
-                }
-
-                // push_constants.chunk_position = { chunk->cx, 0, chunk->cz };
-                // vkCmdPushConstants(cmdbuf, pipeline->layout(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 0, sizeof(push_constants), &push_constants);
-
-                // vkCmdBindVertexBuffers(cmdbuf, 0, 1, &mesh->buf->handle, tmpPtr((VkDeviceSize) 0));
-
-                // assert(mesh->num_verts > 0);
-                // vkCmdDraw(cmdbuf, mesh->num_verts, 1, 0, 0);
-            }
+            
 
             // recreate topLevelAS every frame using the chunks that are in instances
             // TODO: probably reset 'instances' every frame as well
