@@ -279,7 +279,7 @@ ChunkMesh::ChunkMesh(imr::Device &d, ChunkNeighbors &n)
     {
         buf = std::make_unique<imr::Buffer>(d, buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer);
-        // buf->uploadDataSync(0, buffer_size, buffer);
+        buf->uploadDataSync(0, buffer_size, buffer);
         for (uint32_t i = 0; i < g.size() * 3; i++)
         {
             iB.push_back(i);
@@ -287,5 +287,6 @@ ChunkMesh::ChunkMesh(imr::Device &d, ChunkNeighbors &n)
         void *indexBuffer = iB.data();
         iBuf = std::make_unique<imr::Buffer>(d, indexBufferSize, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, indexBuffer);
+        iBuf->uploadDataSync(0, indexBufferSize, indexBuffer);
     }
 }

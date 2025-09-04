@@ -281,9 +281,9 @@ int main(int argc, char **argv)
             loaded->mesh = std::make_unique<ChunkMesh>(*device, n);
 
             VkTransformMatrixKHR transformMatrix = {
-                1.0f, 0.0f, 0.0f, float(cx *32),
+                1.0f, 0.0f, 0.0f, float(cx * 32),
                 0.0f, 1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 1.0f, float(cx *32),
+                0.0f, 0.0f, 1.0f, float(cz * 32),
             };
 
             std::vector<imr::AccelerationStructure::TriangleGeometry> geometry = {{loaded->mesh->buf->device_address(), loaded->mesh->iBuf->device_address(),
