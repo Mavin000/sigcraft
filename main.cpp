@@ -174,9 +174,9 @@ struct Shaders
         topLevelAS = std::make_unique<imr::AccelerationStructure>(d);
 
         VkTransformMatrixKHR transformMatrix = {
-            1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 1.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 0.0f,
+            0.001f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.001f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.001f, 0.0f,
         };
         instances.emplace_back(transformMatrix, &*bottomLevelAS);
         lol[{10000, 10000}] = {transformMatrix, &*bottomLevelAS};
@@ -404,6 +404,7 @@ int main(int argc, char **argv)
             for (auto& [_, val] : lol) {
                 instances.push_back(val);
             }
+            
         
             shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
             shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
