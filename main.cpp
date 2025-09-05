@@ -9,6 +9,7 @@
 
 #include "camera.h"
 #include <iostream>
+#include <map>
 
 using namespace nasl;
 
@@ -126,6 +127,7 @@ void camera_update(GLFWwindow *, CameraInput *input);
 bool reload_shaders = false;
 std::unique_ptr<imr::Buffer> ubo;
 std::unique_ptr<imr::Image> storage_image;
+std::map<std::pair<int, int>, std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *>> lol;
 std::vector<std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *>> instances;
 
 struct Shaders
@@ -177,6 +179,7 @@ struct Shaders
             0.0f, 0.0f, 1.0f, 0.0f,
         };
         instances.emplace_back(transformMatrix, &*bottomLevelAS);
+        lol[{10000, 10000}] = {transformMatrix, &*bottomLevelAS};
 
         topLevelAS->createTopLevelAccelerationStructure(instances);
 
@@ -342,9 +345,9 @@ int main(int argc, char **argv)
                     loaded->mesh = std::make_unique<ChunkMesh>(*device, n);
 
                     VkTransformMatrixKHR transformMatrix = {
-                        1.0f, 0.0f, 0.0f, float(cx *32),
+                        1.0f, 0.0f, 0.0f, float(cx *16),
                         0.0f, 1.0f, 0.0f, 0.0f,
-                        0.0f, 0.0f, 1.0f, float(cz *32),
+                        0.0f, 0.0f, 1.0f, float(cz *16),
                     };
 
 
@@ -354,8 +357,9 @@ int main(int argc, char **argv)
                         loaded->accel = std::make_unique<imr::AccelerationStructure>(*device);
                         loaded->accel->createBottomLevelAccelerationStructure(geometry);
                     }
-                    
-                    instances.emplace_back(transformMatrix, loaded->accel.get());
+
+
+                    lol[{cx, cz}] = {transformMatrix, loaded->accel.get()};
                 }
             };
 
@@ -369,12 +373,38 @@ int main(int argc, char **argv)
                 }
             }
 
-            
+            for (auto chunk : world.loaded_chunks()) {
+                if (abs(chunk->cx - player_chunk_x) > radius || abs(chunk->cz - player_chunk_z) > radius) {
+                    lol.erase({chunk->cx, chunk->cz});
+                    std::unique_ptr<ChunkMesh> stolen = std::move(chunk->mesh);
+                    if (stolen) {
+                        ChunkMesh* released = stolen.release();
+                        context.frame().addCleanupAction([=]() {
+                            delete released;
+                        });
+                    }
+                    world.unload_chunk(chunk);
+                    
 
-            // recreate topLevelAS every frame using the chunks that are in instances
-            // TODO: probably reset 'instances' every frame as well
-            // since the bottomLevelAS are stored in the chunks, 
-            // those do not need to be recreated
+                    continue;
+                }
+
+                auto& mesh = chunk->mesh;
+                if (!mesh || mesh->num_verts == 0) {
+                    // std::cout << "chunk with 0 vertices" << std::endl;
+                    continue;
+                }
+
+
+                
+            }
+
+
+            instances.clear();
+            for (auto& [_, val] : lol) {
+                instances.push_back(val);
+            }
+        
             shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
             shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
 
