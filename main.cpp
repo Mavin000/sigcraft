@@ -256,6 +256,58 @@ int main(int argc, char **argv)
 
     auto &vk = device->dispatch;
 
+    auto load_chunk = [&](int cx, int cz) {
+        Chunk* loaded = world.get_loaded_chunk(cx, cz);
+        if (!loaded){
+            world.load_chunk(cx, cz);
+        }
+        loaded = world.get_loaded_chunk(cx, cz);
+        assert(loaded);
+
+        if (loaded->mesh)
+            return;
+
+        bool all_neighbours_loaded = true;
+        ChunkNeighbors n = {};
+        for (int dx = -1; dx < 2; dx++) {
+            for (int dz = -1; dz < 2; dz++) {
+                int nx = cx + dx;
+                int nz = cz + dz;
+
+                auto neighborChunk = world.get_loaded_chunk(nx, nz);
+                if (neighborChunk)
+                    n.neighbours[dx + 1][dz + 1] = &neighborChunk->data;
+                else
+                    all_neighbours_loaded = false;
+            }
+        }
+        if (all_neighbours_loaded || true) {
+            loaded->mesh = std::make_unique<ChunkMesh>(*device, n);
+
+            VkTransformMatrixKHR transformMatrix = {
+                1.0f, 0.0f, 0.0f, float(cx * 32),
+                0.0f, 1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, float(cz * 32),
+            };
+
+            std::vector<imr::AccelerationStructure::TriangleGeometry> geometry = {{loaded->mesh->buf->device_address(), loaded->mesh->iBuf->device_address(),
+                loaded->mesh->num_verts, static_cast<uint32_t>(loaded->mesh->num_verts * 3),
+                transformMatrix}};
+            if (!loaded->accel) {
+                loaded->accel = std::make_unique<imr::AccelerationStructure>(*device);
+                loaded->accel->createBottomLevelAccelerationStructure(geometry);
+            }
+
+            instances.emplace_back(transformMatrix, loaded->accel.get());
+        }
+        assert(loaded->mesh);
+    };
+
+    load_chunk(0, 0);
+
+    shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
+    shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
+
     while (!glfwWindowShouldClose(window))
     {
         fps_counter.tick();
@@ -480,7 +532,7 @@ int main(int argc, char **argv)
 
             glfwPollEvents(); 
         });
-        vk.deviceWaitIdle();
+        // vk.deviceWaitIdle();
     }
     swapchain.drain();
     return 0;
