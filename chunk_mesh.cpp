@@ -264,28 +264,40 @@ void chunk_mesh(const ChunkData *chunk, ChunkNeighbors &neighbours, std::vector<
 ChunkMesh::ChunkMesh(imr::Device &d, ChunkNeighbors &n)
 {
     std::vector<uint8_t> g;
-    std::vector<uint32_t> iB;
     chunk_mesh(n.neighbours[1][1], n, g, &num_verts);
 
     // fprintf(stderr, "%zu vertices, totalling %zu KiB of data\n", num_verts, num_verts * sizeof(float) * 5 / 1024);
     // fflush(stderr);
 
-    size_t buffer_size = g.size() * sizeof(uint8_t);
+    std::vector<float> vertexPositions;
+    vertexPositions.reserve(num_verts * 3);
 
-    void *buffer = g.data();
-
-    size_t indexBufferSize = g.size() * 3 * sizeof(uint32_t);
-    if (buffer_size > 0)
-    {
-        buf = std::make_unique<imr::Buffer>(d, buffer_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-                                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer);
-        // buf->uploadDataSync(0, buffer_size, buffer);
-        for (uint32_t i = 0; i < g.size() * 3; i++)
-        {
-            iB.push_back(i);
-        }
-        void *indexBuffer = iB.data();
-        iBuf = std::make_unique<imr::Buffer>(d, indexBufferSize, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-                                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, indexBuffer);
+    auto verts = reinterpret_cast<const ChunkMesh::Vertex*>(g.data());
+    for (size_t i = 0; i < num_verts; i++) {
+        const auto& v = verts[i];
+        vertexPositions.push_back(static_cast<float>(v.vx));
+        vertexPositions.push_back(static_cast<float>(v.vy));
+        vertexPositions.push_back(static_cast<float>(v.vz));
     }
+
+    size_t vertexBufferSize = vertexPositions.size() * sizeof(float);
+    buf = std::make_unique<imr::Buffer>(d, vertexBufferSize,
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+            );
+    buf->uploadDataSync(0, vertexBufferSize, vertexPositions.data());
+
+    std::vector<uint32_t> indexBuffer;
+    for (uint32_t i = 0; i < num_verts; i++) {
+        indexBuffer.push_back(i);
+    }
+
+    size_t buffer_size = sizeof(uint32_t) * num_verts;
+    void* buffer = indexBuffer.data();
+
+    iBuf = std::make_unique<imr::Buffer>(d, buffer_size,
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    iBuf->uploadDataSync(0, buffer_size, buffer);
 }
+
