@@ -437,7 +437,7 @@ int main(int argc, char **argv)
         
             shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
             shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
-            triangleBuffer = std::make_unique<imr::Buffer>(*device, sizeof(imr::AccelerationStructure::TriangleGeometry) * descriptorFragments.size(), ...);
+            triangleBuffer = std::make_unique<imr::Buffer>(*device, sizeof(imr::AccelerationStructure::TriangleGeometry) * descriptorFragments.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
 
 
