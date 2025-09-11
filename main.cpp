@@ -14,11 +14,12 @@ using namespace nasl;
 
 
 struct DescriptorStuff{
-    imr::Buffer* vertexBuffer;
-    imr::Buffer* normalBuffer;
-    imr::Buffer* colorIDBuffer;
+    //VkDeviceAddress vertexAddress;
+    //VkDeviceAddress normalAddress;
+    //VkDeviceAddress colorIDAddress;
     uint32_t firstIndex;
     uint32_t vertexOffset;
+    vec3 color;
 };
 
 // test anything
@@ -195,11 +196,12 @@ struct Shaders
         };
         instances.emplace_back(transformMatrix, &*bottomLevelAS);
         lol[{10000, 10000}] = {transformMatrix, &*bottomLevelAS, {
-            vertexBuffer.get(),
-            nullptr,
-            indexBuffer.get(),
+            //vertexBuffer->device_address(),
+            //nullptr,
+            //indexBuffer->device_address(),
             0,
-            0
+            0,
+            vec3(1, 0, 1)
         }};
 
         topLevelAS->createTopLevelAccelerationStructure(instances);
@@ -213,7 +215,7 @@ struct Shaders
 
         storage_image = std::make_unique<imr::Image>(d, VK_IMAGE_TYPE_2D, (VkExtent3D){width, height, 1}, swapchain.format(), (VkImageUsageFlagBits)(VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
         ubo = std::make_unique<imr::Buffer>(d, sizeof(uniformData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-        triangleBuffer = std::make_unique<imr::Buffer>(d, sizeof(imr::AccelerationStructure::TriangleGeometry), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        triangleBuffer = std::make_unique<imr::Buffer>(d, sizeof(imr::AccelerationStructure::TriangleGeometry), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     }
 };
 
@@ -232,13 +234,15 @@ int main(int argc, char **argv)
             reload_shaders = true; });
 
     imr::Context context;
-    VkPhysicalDeviceBufferDeviceAddressFeatures enabledBufferDeviceAddresFeatures{};
+    VkPhysicalDeviceFeatures physicalFeatures{};
+    VkPhysicalDeviceBufferDeviceAddressFeatures enabledBufferDeviceAddressFeatures{};
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR enabledRayTracingPipelineFeatures{};
     VkPhysicalDeviceAccelerationStructureFeaturesKHR enabledAccelerationStructureFeatures{};
     std::unique_ptr<imr::Device> device = std::make_unique<imr::Device>(context, [&](vkb::PhysicalDeviceSelector &selector)
                                                                         {
             selector.add_required_extension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
             selector.add_required_extension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+
 
             // Required by VK_KHR_acceleration_structure
             selector.add_required_extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -251,9 +255,12 @@ int main(int argc, char **argv)
             // Required by VK_KHR_spirv_1_4
             selector.add_required_extension(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
 
-            enabledBufferDeviceAddresFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
-            enabledBufferDeviceAddresFeatures.bufferDeviceAddress = VK_TRUE;
-            selector.add_required_extension_features(enabledBufferDeviceAddresFeatures);
+            physicalFeatures.shaderInt64 = VK_TRUE;
+            selector.set_required_features(physicalFeatures);
+
+            enabledBufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+            enabledBufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+            selector.add_required_extension_features(enabledBufferDeviceAddressFeatures);
 
             enabledRayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
             enabledRayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
@@ -380,11 +387,12 @@ int main(int argc, char **argv)
                     }
 
                     lol[{cx, cz}] = {transformMatrix, loaded->accel.get(), {
-                        loaded->mesh->buf.get(),
-                        nullptr,
-                        loaded->mesh->iBuf.get(),
+                        //loaded->mesh->buf->device_address(),
+                        //nullptr,
+                        //loaded->mesh->iBuf.get(),
                         0,
-                        0
+                        0,
+                        vec3(1, 0, 1)
                     }};
                 }
             };
@@ -432,12 +440,11 @@ int main(int argc, char **argv)
                 descriptorFragments.emplace_back(desc);
             }
 
-          
-            
-        
+              
             shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
             shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
-            triangleBuffer = std::make_unique<imr::Buffer>(*device, sizeof(imr::AccelerationStructure::TriangleGeometry) * descriptorFragments.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+            triangleBuffer = std::make_unique<imr::Buffer>(*device, sizeof(imr::AccelerationStructure::TriangleGeometry) * descriptorFragments.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+            triangleBuffer->uploadDataSync(0, sizeof(imr::AccelerationStructure::TriangleGeometry) * descriptorFragments.size(), descriptorFragments.data());
 
 
 
@@ -452,7 +459,7 @@ int main(int argc, char **argv)
             bind_helper->set_acceleration_structure(0, 0, *shaders->topLevelAS);
             bind_helper->set_storage_image(0, 1, *storage_image);
             bind_helper->set_uniform_buffer(0, 2, *ubo);
-            //bind_helper->set_uniform_buffer(0, 3, *triangleBuffer);
+            bind_helper->set_storage_buffer(0, 3, *triangleBuffer);
             bind_helper->commit(cmdbuf);
 
             context.addCleanupAction([=, &device]()
