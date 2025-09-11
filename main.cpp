@@ -12,6 +12,15 @@
 
 using namespace nasl;
 
+
+struct DescriptorStuff{
+    imr::Buffer* vertexBuffer;
+    imr::Buffer* normalBuffer;
+    imr::Buffer* colorIDBuffer;
+    uint32_t firstIndex;
+    uint32_t vertexOffset;
+};
+
 // test anything
 
 struct Face
@@ -126,8 +135,11 @@ void camera_update(GLFWwindow *, CameraInput *input);
 bool reload_shaders = false;
 std::unique_ptr<imr::Buffer> ubo;
 std::unique_ptr<imr::Image> storage_image;
-std::map<std::pair<int, int>, std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *>> lol;
+std::map<std::pair<int, int>, std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *, DescriptorStuff>> lol;
 std::vector<std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *>> instances;
+
+std::vector<DescriptorStuff> descriptorFragments;
+std::unique_ptr<imr::Buffer> triangleBuffer;
 
 struct Shaders
 {
@@ -140,12 +152,14 @@ struct Shaders
     std::unique_ptr<imr::Buffer> indexBuffer;
     uint32_t indexCount;
     Cube cube;
+    vec3 red = {1, 0, 0};
     std::vector<imr::AccelerationStructure::TriangleGeometry> geometries;
 
     Shaders(imr::Device &d, imr::Swapchain &swapchain)
     {
         // test
         cube = make_cube();
+
 
         indexCount = static_cast<uint32_t>(0);
         // TODO add vertices and points
@@ -156,6 +170,8 @@ struct Shaders
         indexBuffer = std::make_unique<imr::Buffer>(d, sizeof(cube.tris),
                                                     VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &cube.tris);
+        
+
 
         bottomLevelAS = std::make_unique<imr::AccelerationStructure>(d);
         for (int i = 0; i < 6; i++)
@@ -178,7 +194,13 @@ struct Shaders
             0.0f, 0.0f, 0.001f, 0.0f,
         };
         instances.emplace_back(transformMatrix, &*bottomLevelAS);
-        lol[{10000, 10000}] = {transformMatrix, &*bottomLevelAS};
+        lol[{10000, 10000}] = {transformMatrix, &*bottomLevelAS, {
+            vertexBuffer.get(),
+            nullptr,
+            indexBuffer.get(),
+            0,
+            0
+        }};
 
         topLevelAS->createTopLevelAccelerationStructure(instances);
 
@@ -191,6 +213,7 @@ struct Shaders
 
         storage_image = std::make_unique<imr::Image>(d, VK_IMAGE_TYPE_2D, (VkExtent3D){width, height, 1}, swapchain.format(), (VkImageUsageFlagBits)(VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
         ubo = std::make_unique<imr::Buffer>(d, sizeof(uniformData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        triangleBuffer = std::make_unique<imr::Buffer>(d, sizeof(imr::AccelerationStructure::TriangleGeometry), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     }
 };
 
@@ -356,7 +379,13 @@ int main(int argc, char **argv)
                         loaded->accel->createBottomLevelAccelerationStructure(geometry);
                     }
 
-                    lol[{cx, cz}] = {transformMatrix, loaded->accel.get()};
+                    lol[{cx, cz}] = {transformMatrix, loaded->accel.get(), {
+                        loaded->mesh->buf.get(),
+                        nullptr,
+                        loaded->mesh->iBuf.get(),
+                        0,
+                        0
+                    }};
                 }
             };
 
@@ -394,13 +423,23 @@ int main(int argc, char **argv)
 
 
             instances.clear();
+            descriptorFragments.clear();
+            instances.reserve(lol.size());
+            descriptorFragments.reserve(lol.size());
             for (auto& [_, val] : lol) {
-                instances.push_back(val);
+                auto& [transform, blas, desc] = val;
+                instances.emplace_back(transform, blas);
+                descriptorFragments.emplace_back(desc);
             }
+
+          
             
         
             shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
             shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
+            triangleBuffer = std::make_unique<imr::Buffer>(*device, sizeof(imr::AccelerationStructure::TriangleGeometry) * descriptorFragments.size(), ...);
+
+
 
             auto &image = context.image();
 
@@ -413,6 +452,7 @@ int main(int argc, char **argv)
             bind_helper->set_acceleration_structure(0, 0, *shaders->topLevelAS);
             bind_helper->set_storage_image(0, 1, *storage_image);
             bind_helper->set_uniform_buffer(0, 2, *ubo);
+            //bind_helper->set_uniform_buffer(0, 3, *triangleBuffer);
             bind_helper->commit(cmdbuf);
 
             context.addCleanupAction([=, &device]()
