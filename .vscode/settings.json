@@ -60,6 +60,8 @@
         "istream": "cpp",
         "ostream": "cpp",
         "sstream": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "codecvt": "cpp",
+        "ratio": "cpp"
     }
 }

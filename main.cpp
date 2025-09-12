@@ -14,12 +14,10 @@ using namespace nasl;
 
 
 struct DescriptorStuff{
-    //VkDeviceAddress vertexAddress;
-    //VkDeviceAddress normalAddress;
-    //VkDeviceAddress colorIDAddress;
+    VkDeviceAddress vertexAddress;
+    VkDeviceAddress indexAddress;
     uint32_t firstIndex;
     uint32_t vertexOffset;
-    vec3 color;
 };
 
 // test anything
@@ -139,8 +137,8 @@ std::unique_ptr<imr::Image> storage_image;
 std::map<std::pair<int, int>, std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *, DescriptorStuff>> lol;
 std::vector<std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *>> instances;
 
-std::vector<DescriptorStuff> descriptorFragments;
 std::unique_ptr<imr::Buffer> triangleBuffer;
+std::vector<DescriptorStuff> globalDescriptors;
 
 struct Shaders
 {
@@ -196,12 +194,12 @@ struct Shaders
         };
         instances.emplace_back(transformMatrix, &*bottomLevelAS);
         lol[{10000, 10000}] = {transformMatrix, &*bottomLevelAS, {
-            //vertexBuffer->device_address(),
+            vertexBuffer->device_address(),
             //nullptr,
-            //indexBuffer->device_address(),
+            indexBuffer->device_address(),
             0,
             0,
-            vec3(1, 0, 1)
+            //vec3(1, 0, 1)
         }};
 
         topLevelAS->createTopLevelAccelerationStructure(instances);
@@ -215,7 +213,7 @@ struct Shaders
 
         storage_image = std::make_unique<imr::Image>(d, VK_IMAGE_TYPE_2D, (VkExtent3D){width, height, 1}, swapchain.format(), (VkImageUsageFlagBits)(VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
         ubo = std::make_unique<imr::Buffer>(d, sizeof(uniformData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-        triangleBuffer = std::make_unique<imr::Buffer>(d, sizeof(imr::AccelerationStructure::TriangleGeometry), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        triangleBuffer = std::make_unique<imr::Buffer>(d, sizeof(DescriptorStuff), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     }
 };
 
@@ -386,14 +384,14 @@ int main(int argc, char **argv)
                         loaded->accel->createBottomLevelAccelerationStructure(geometry);
                     }
 
-                    lol[{cx, cz}] = {transformMatrix, loaded->accel.get(), {
-                        //loaded->mesh->buf->device_address(),
-                        //nullptr,
-                        //loaded->mesh->iBuf.get(),
+                    DescriptorStuff desc = {
+                        loaded->mesh->buf->device_address(),
+                        loaded->mesh->iBuf->device_address(),
                         0,
-                        0,
-                        vec3(1, 0, 1)
-                    }};
+                        0
+                    };
+
+                    lol[{cx, cz}] = {transformMatrix, loaded->accel.get(), desc};
                 }
             };
 
@@ -431,20 +429,20 @@ int main(int argc, char **argv)
 
 
             instances.clear();
-            descriptorFragments.clear();
             instances.reserve(lol.size());
-            descriptorFragments.reserve(lol.size());
+            globalDescriptors.clear();
+            globalDescriptors.reserve(lol.size());
             for (auto& [_, val] : lol) {
                 auto& [transform, blas, desc] = val;
                 instances.emplace_back(transform, blas);
-                descriptorFragments.emplace_back(desc);
+                globalDescriptors.emplace_back(desc);
             }
 
               
             shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
             shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
-            triangleBuffer = std::make_unique<imr::Buffer>(*device, sizeof(imr::AccelerationStructure::TriangleGeometry) * descriptorFragments.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-            triangleBuffer->uploadDataSync(0, sizeof(imr::AccelerationStructure::TriangleGeometry) * descriptorFragments.size(), descriptorFragments.data());
+            triangleBuffer = std::make_unique<imr::Buffer>(*device, sizeof(DescriptorStuff) * globalDescriptors.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+            triangleBuffer->uploadDataSync(0, sizeof(DescriptorStuff) * globalDescriptors.size(), globalDescriptors.data());
 
 
 
