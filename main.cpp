@@ -16,7 +16,7 @@ using namespace nasl;
 struct DescriptorPackage{
     VkDeviceAddress vertexAddress;
     VkDeviceAddress indexAddress;
-    uint32_t firstIndex;
+    VkDeviceAddress vertexAttributesAddress;
     uint32_t vertexOffset;
 };
 
@@ -196,7 +196,7 @@ struct Shaders
         loadedChunkData[{10000, 10000}] = {transformMatrix, &*bottomLevelAS, {
             vertexBuffer->device_address(),
             indexBuffer->device_address(),
-            0,
+            vertexBuffer->device_address(),//WRONG
             0,
             //vec3(1, 0, 1)
         }};
@@ -385,7 +385,7 @@ int main(int argc, char **argv)
                     DescriptorPackage desc = {
                         loaded->mesh->buf->device_address(),
                         loaded->mesh->iBuf->device_address(),
-                        0,
+                        loaded->mesh->vertexAttributesBuf->device_address(),
                         0
                     };
 
