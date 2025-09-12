@@ -14,6 +14,7 @@ struct ChunkMesh
 {
     std::unique_ptr<imr::Buffer> buf;
     std::unique_ptr<imr::Buffer> iBuf;
+    std::unique_ptr<imr::Buffer> vertexAttributesBuf;
     size_t num_verts;
 
     ChunkMesh(imr::Device &, ChunkNeighbors &n);

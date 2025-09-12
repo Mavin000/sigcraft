@@ -13,7 +13,7 @@
 using namespace nasl;
 
 
-struct DescriptorStuff{
+struct DescriptorPackage{
     VkDeviceAddress vertexAddress;
     VkDeviceAddress indexAddress;
     uint32_t firstIndex;
@@ -134,11 +134,11 @@ void camera_update(GLFWwindow *, CameraInput *input);
 bool reload_shaders = false;
 std::unique_ptr<imr::Buffer> ubo;
 std::unique_ptr<imr::Image> storage_image;
-std::map<std::pair<int, int>, std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *, DescriptorStuff>> lol;
+std::map<std::pair<int, int>, std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *, DescriptorPackage>> loadedChunkData;
 std::vector<std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *>> instances;
 
-std::unique_ptr<imr::Buffer> triangleBuffer;
-std::vector<DescriptorStuff> globalDescriptors;
+std::unique_ptr<imr::Buffer> descriptorBuffer;
+std::vector<DescriptorPackage> globalDescriptors;
 
 struct Shaders
 {
@@ -193,9 +193,8 @@ struct Shaders
             0.0f, 0.0f, 0.001f, 0.0f,
         };
         instances.emplace_back(transformMatrix, &*bottomLevelAS);
-        lol[{10000, 10000}] = {transformMatrix, &*bottomLevelAS, {
+        loadedChunkData[{10000, 10000}] = {transformMatrix, &*bottomLevelAS, {
             vertexBuffer->device_address(),
-            //nullptr,
             indexBuffer->device_address(),
             0,
             0,
@@ -213,7 +212,7 @@ struct Shaders
 
         storage_image = std::make_unique<imr::Image>(d, VK_IMAGE_TYPE_2D, (VkExtent3D){width, height, 1}, swapchain.format(), (VkImageUsageFlagBits)(VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
         ubo = std::make_unique<imr::Buffer>(d, sizeof(uniformData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-        triangleBuffer = std::make_unique<imr::Buffer>(d, sizeof(DescriptorStuff), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        descriptorBuffer = std::make_unique<imr::Buffer>(d, sizeof(DescriptorPackage), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     }
 };
 
@@ -266,7 +265,6 @@ int main(int argc, char **argv)
 
             enabledAccelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
             enabledAccelerationStructureFeatures.accelerationStructure = VK_TRUE;
-            //enabledAccelerationStructureFeatures.accelerationStructureHostCommands = VK_TRUE;
             selector.add_required_extension_features(enabledAccelerationStructureFeatures); });
 
     imr::Swapchain swapchain(*device, window);
@@ -384,14 +382,14 @@ int main(int argc, char **argv)
                         loaded->accel->createBottomLevelAccelerationStructure(geometry);
                     }
 
-                    DescriptorStuff desc = {
+                    DescriptorPackage desc = {
                         loaded->mesh->buf->device_address(),
                         loaded->mesh->iBuf->device_address(),
                         0,
                         0
                     };
 
-                    lol[{cx, cz}] = {transformMatrix, loaded->accel.get(), desc};
+                    loadedChunkData[{cx, cz}] = {transformMatrix, loaded->accel.get(), desc};
                 }
             };
 
@@ -407,7 +405,7 @@ int main(int argc, char **argv)
 
             for (auto chunk : world.loaded_chunks()) {
                 if (abs(chunk->cx - player_chunk_x) > radius || abs(chunk->cz - player_chunk_z) > radius) {
-                    lol.erase({chunk->cx, chunk->cz});
+                    loadedChunkData.erase({chunk->cx, chunk->cz});
                     std::unique_ptr<ChunkMesh> stolen = std::move(chunk->mesh);
                     if (stolen) {
                         ChunkMesh* released = stolen.release();
@@ -429,10 +427,10 @@ int main(int argc, char **argv)
 
 
             instances.clear();
-            instances.reserve(lol.size());
+            instances.reserve(loadedChunkData.size());
             globalDescriptors.clear();
-            globalDescriptors.reserve(lol.size());
-            for (auto& [_, val] : lol) {
+            globalDescriptors.reserve(loadedChunkData.size());
+            for (auto& [_, val] : loadedChunkData) {
                 auto& [transform, blas, desc] = val;
                 instances.emplace_back(transform, blas);
                 globalDescriptors.emplace_back(desc);
@@ -441,8 +439,8 @@ int main(int argc, char **argv)
               
             shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
             shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
-            triangleBuffer = std::make_unique<imr::Buffer>(*device, sizeof(DescriptorStuff) * globalDescriptors.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-            triangleBuffer->uploadDataSync(0, sizeof(DescriptorStuff) * globalDescriptors.size(), globalDescriptors.data());
+            descriptorBuffer = std::make_unique<imr::Buffer>(*device, sizeof(DescriptorPackage) * globalDescriptors.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+            descriptorBuffer->uploadDataSync(0, sizeof(DescriptorPackage) * globalDescriptors.size(), globalDescriptors.data());
 
 
 
@@ -457,7 +455,7 @@ int main(int argc, char **argv)
             bind_helper->set_acceleration_structure(0, 0, *shaders->topLevelAS);
             bind_helper->set_storage_image(0, 1, *storage_image);
             bind_helper->set_uniform_buffer(0, 2, *ubo);
-            bind_helper->set_storage_buffer(0, 3, *triangleBuffer);
+            bind_helper->set_storage_buffer(0, 3, *descriptorBuffer);
             bind_helper->commit(cmdbuf);
 
             context.addCleanupAction([=, &device]()

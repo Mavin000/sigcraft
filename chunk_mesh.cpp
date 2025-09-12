@@ -278,6 +278,7 @@ ChunkMesh::ChunkMesh(imr::Device &d, ChunkNeighbors &n)
         vertexPositions.push_back(static_cast<float>(v.vx));
         vertexPositions.push_back(static_cast<float>(v.vy));
         vertexPositions.push_back(static_cast<float>(v.vz));
+
     }
 
     size_t vertexBufferSize = vertexPositions.size() * sizeof(float);
@@ -299,5 +300,11 @@ ChunkMesh::ChunkMesh(imr::Device &d, ChunkNeighbors &n)
             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     iBuf->uploadDataSync(0, buffer_size, buffer);
+
+    vertexAttributesBuf = std::make_unique<imr::Buffer>(d, g.size(),
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vertexAttributesBuf->uploadDataSync(0, g.size(), g.data());
+
 }
 
