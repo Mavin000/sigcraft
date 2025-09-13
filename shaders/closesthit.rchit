@@ -8,7 +8,7 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
 
-layout(location = 0) rayPayloadInEXT vec3 hitValue;
+
 hitAttributeEXT vec2 attribs;
 
 struct Vertex {
@@ -45,27 +45,23 @@ layout(scalar, set = 0, binding = 3) readonly buffer DescriptorBuffer {
 };
 
 
+layout(location=0) rayPayloadInEXT vec3 hitValue;
+layout(location=1) rayPayloadInEXT vec3 rayDir;
+
 void main()
 {
 
-  DescriptorStuff desc = descriptors[gl_InstanceID];
-  IndexBuffer ibuf = IndexBuffer(desc.indexAddress);
-  VertexBuffer vbuf = VertexBuffer(desc.vertexAddress);
-  VertexDataBuffer dataBuf = VertexDataBuffer(desc.vertexDataAdress);
+    DescriptorStuff desc = descriptors[gl_InstanceID];
+    IndexBuffer ibuf = IndexBuffer(desc.indexAddress);
+    VertexBuffer vbuf = VertexBuffer(desc.vertexAddress);
+    VertexDataBuffer dataBuf = VertexDataBuffer(desc.vertexDataAdress);
 
-  uint i0 = ibuf.indices[3 * gl_PrimitiveID + 0] + desc.vertexOffset;
-  uint i1 = ibuf.indices[3 * gl_PrimitiveID + 1] + desc.vertexOffset;
-  uint i2 = ibuf.indices[3 * gl_PrimitiveID + 2] + desc.vertexOffset;
+    uint i0 = ibuf.indices[3 * gl_PrimitiveID + 0] + desc.vertexOffset;
+    uint i1 = ibuf.indices[3 * gl_PrimitiveID + 1] + desc.vertexOffset;
+    uint i2 = ibuf.indices[3 * gl_PrimitiveID + 2] + desc.vertexOffset;
 
-
-
-
-  //Vertex v = vbuf.vertices[gl_PrimitiveID];
-  //uint64_t x = (desc.vertexAddress >> 6)%65536;
-  //float y = int(x);
-  //vec3 argh = vec3( y / 255.0  , y / 4096.0, y / 65536.0);
-Vertex v = dataBuf.verticesData[i0];
-hitValue = vec3(float(v.br) / 255.0, float(v.bg) / 255.0, float(v.bb) / 255.0);
+    Vertex v = dataBuf.verticesData[i0];
+    hitValue = vec3(float(v.br) / 255.0, float(v.bg) / 255.0, float(v.bb) / 255.0);
 
 
 }
