@@ -62,8 +62,13 @@ void main()
     uint i1 = ibuf.indices[3 * gl_PrimitiveID + 1] + desc.vertexOffset;
     uint i2 = ibuf.indices[3 * gl_PrimitiveID + 2] + desc.vertexOffset;
 
+
+
     Vertex v = dataBuf.verticesData[i0];
-    payload.hitValue = vec3(float(v.br) / 255.0, float(v.bg) / 255.0, float(v.bb) / 255.0);
+
+    vec3 normal = normalize(vec3(float(v.nnx), float(v.nny), float(v.nnz)) / 255.0 * 2.0 - 1.0);
+    float ndotl = max(abs(dot(normal, -payload.rayDir)), 0.5);
+    payload.hitValue = vec3(float(v.br) / 255.0, float(v.bg) / 255.0, float(v.bb) / 255.0) * ndotl;
 
 
 }

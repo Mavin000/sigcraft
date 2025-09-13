@@ -20,7 +20,7 @@ static BlockData decode_pre_flattening_id(uint8_t id) {
     if (id == 3)
         return BlockDirt;
     if (id == 4)
-        return BlockStone;
+        return BlockCobbleStone;
     if (id == 5)
         return BlockPlanks;
     if (id == 8 || id == 9)
@@ -35,10 +35,16 @@ static BlockData decode_pre_flattening_id(uint8_t id) {
         return BlockWood;
     if (id == 18 || id == 161)
         return BlockLeaves;
+    if (id == 24)
+        return BlockSandStone;
     if (id == 31)
         return BlockTallGrass;
     if (id == 78 || id == 80)
         return BlockSnow;
+    if (id == 159)
+        return BlockWhiteTerracotta;
+    if (id == 155)
+        return BlockQuartz;
     return BlockUnknown;
 }
 
@@ -52,7 +58,7 @@ static BlockData decode_flattened_id(const char* id) {
     if (strcmp("minecraft:dirt", id) == 0)
         return BlockDirt;
     if (strcmp("minecraft:cobblestone", id) == 0)
-        return BlockStone;
+        return BlockCobbleStone;
     if (strcmp("minecraft:planks", id) == 0)
         return BlockPlanks;
     if ((strcmp("minecraft:water", id) == 0) || (strcmp("minecraft:flowing_water", id) == 0))
@@ -67,10 +73,16 @@ static BlockData decode_flattened_id(const char* id) {
         return BlockWood;
     if ((strcmp("minecraft:leaves", id) == 0) || strcmp("minecraft:leaves2", id) == 0)
         return BlockLeaves;
+    if (strcmp("minecraft:sandstone", id) == 0)
+        return BlockSandStone;
     if (strcmp("minecraft:tallgrass", id) == 0)
         return BlockTallGrass;
     if ((strcmp("minecraft:snow_layer", id) == 0) || strcmp("minecraft:snow", id) == 0)
         return BlockSnow;
+    if (strcmp("minecraft:white_terracotta", id) == 0)
+        return BlockWhiteTerracotta;
+    if (strcmp("minecraft:quartz_block", id) == 0)
+        return BlockQuartz;
     return BlockUnknown;
 }
 

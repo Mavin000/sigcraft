@@ -14,11 +14,13 @@ typedef uint32_t BlockData;
 
 #define BLOCK_TYPES(B) \
 B(Air, 0, 0, 0) \
-B(Stone, 0.5, 0.5, 0.5) \
+B(Stone, 0.49, 0.49, 0.49) \
+B(CobbleStone, 0.52, 0.52, 0.52) \
 B(Dirt, 0.25, 0.25, 0) \
 B(Grass, 0.2, 0.8, 0.1) \
 B(TallGrass, 0.2, 0.9, 0.1) \
 B(Sand, 0.8, 0.8, 0) \
+B(SandStone, 0.84, 0.8, 0.61) \
 B(Gravel, 0.9, 0.9, 0.9) \
 B(Planks, 0.8, 0.5, 0.0) \
 B(Water, 0.0, 0.2, 0.8) \
@@ -26,7 +28,11 @@ B(Leaves, 0.1, 0.4, 0.1) \
 B(Wood, 0.3, 0.1, 0.0) \
 B(Snow, 1.0, 1.0, 1.0) \
 B(Lava, 1.0, 0.2, 0.0) \
+B(WhiteTerracotta, 0.82, 0.7, 0.63) \
+B(Quartz, 0.92,0.9,0.87) \
+B(Test, 1.0, 0.0, 0.0) \
 B(Unknown, 1.0, 0.0, 1.0)
+
 
 enum BlockId {
 #define B(name, r, g, b) Block##name,
