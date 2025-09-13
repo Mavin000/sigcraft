@@ -9,9 +9,12 @@ layout(binding = 2, set = 0) uniform CameraProperties
 	mat4 projInverse;
 } cam;
 
-layout(location=0) rayPayloadEXT vec3 hitValue;
-layout(location=1) rayPayloadEXT vec3 rayDir;
+struct RayPayload {
+	vec3 hitValue;
+	vec3 rayDir;
+};
 
+layout(location = 0) rayPayloadEXT RayPayload payload;
 
 void main()
 {
@@ -27,10 +30,18 @@ void main()
 	float tmin = 0.001;
 	float tmax = 10000.0;
 
-	rayDir = direction.xyz;
-    hitValue = vec3(0.0);
 
-    traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
+	payload.hitValue = vec3(0.0);
+	payload.rayDir = direction.xyz;
 
-	imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(hitValue, 0.0));
-}
+	traceRayEXT(
+		topLevelAS,
+		gl_RayFlagsOpaqueEXT,
+		0xff,
+		0, 0, 0,
+		origin.xyz, tmin,
+		direction.xyz, tmax,
+		0
+	);
+
+	imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(payload.hitValue, 0.0));}

@@ -12,13 +12,11 @@
 hitAttributeEXT vec2 attribs;
 
 struct Vertex {
-    int16_t vx; int16_t vy; int16_t vz;
-    uint8_t tt;
-    uint8_t ss;
-    uint8_t nnx; uint8_t nny; uint8_t nnz;
-    uint8_t pad;
-    uint8_t br; uint8_t bg; uint8_t bb;
-    uint8_t pad2;
+    int vx; int vy; int vz;
+    uint tt;
+    uint ss;
+    uint nnx; uint nny; uint nnz;
+    uint br; uint bg; uint bb;
 };
 
 layout(buffer_reference, scalar) buffer VertexBuffer {
@@ -45,8 +43,12 @@ layout(scalar, set = 0, binding = 3) readonly buffer DescriptorBuffer {
 };
 
 
-layout(location=0) rayPayloadInEXT vec3 hitValue;
-layout(location=1) rayPayloadInEXT vec3 rayDir;
+struct RayPayload {
+	vec3 hitValue;
+	vec3 rayDir;
+};
+
+layout(location = 0) rayPayloadInEXT RayPayload payload;
 
 void main()
 {
@@ -61,7 +63,7 @@ void main()
     uint i2 = ibuf.indices[3 * gl_PrimitiveID + 2] + desc.vertexOffset;
 
     Vertex v = dataBuf.verticesData[i0];
-    hitValue = vec3(float(v.br) / 255.0, float(v.bg) / 255.0, float(v.bb) / 255.0);
+    payload.hitValue = vec3(float(v.br) / 255.0, float(v.bg) / 255.0, float(v.bb) / 255.0);
 
 
 }
