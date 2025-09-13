@@ -30,6 +30,8 @@ B(Snow, 1.0, 1.0, 1.0) \
 B(Lava, 1.0, 0.2, 0.0) \
 B(WhiteTerracotta, 0.82, 0.7, 0.63) \
 B(Quartz, 0.92,0.9,0.87) \
+B(Dandelion, 1.0, 0.94, 0.2) \
+B(MossyCobbleStone, 0.45, 0.47, 0.41) \
 B(Test, 1.0, 0.0, 0.0) \
 B(Unknown, 1.0, 0.0, 1.0)
 
