@@ -30,6 +30,15 @@ struct ChunkMesh
     };
 
     static_assert(sizeof(Vertex) == sizeof(uint8_t) * 16);
+
+    struct uglyVertex
+    {
+        int vx, vy, vz;
+        uint tt;
+        uint ss;
+        uint nnx, nny, nnz;
+        uint br, bg, bb;
+    };
 };
 
 #endif

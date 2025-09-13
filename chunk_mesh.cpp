@@ -301,10 +301,30 @@ ChunkMesh::ChunkMesh(imr::Device &d, ChunkNeighbors &n)
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     iBuf->uploadDataSync(0, buffer_size, buffer);
 
-    vertexAttributesBuf = std::make_unique<imr::Buffer>(d, g.size(),
+
+    std::vector<uglyVertex> g2;
+    g2.resize(num_verts);
+    for (size_t i = 0; i < num_verts; i++) {
+        const auto& v = verts[i];
+        uglyVertex uv;
+        uv.vx = static_cast<int>(v.vx);
+        uv.vy = static_cast<int>(v.vy);
+        uv.vz = static_cast<int>(v.vz);
+        uv.tt = static_cast<uint>(v.tt);
+        uv.ss = static_cast<uint>(v.ss);
+        uv.nnx = static_cast<uint>(v.nnx);
+        uv.nny = static_cast<uint>(v.nny);
+        uv.nnz = static_cast<uint>(v.nnz);
+        uv.br = static_cast<uint>(v.br);
+        uv.bg = static_cast<uint>(v.bg);
+        uv.bb = static_cast<uint>(v.bb);
+        g2[i] = uv;
+    }
+
+    vertexAttributesBuf = std::make_unique<imr::Buffer>(d, g2.size() * sizeof(uglyVertex),
             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    vertexAttributesBuf->uploadDataSync(0, g.size(), g.data());
+    vertexAttributesBuf->uploadDataSync(0, g2.size() * sizeof(uglyVertex), g2.data());
 
 }
 
