@@ -3,8 +3,6 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_buffer_reference : require
-#extension GL_EXT_shader_explicit_arithmetic_types_int8 : require
-#extension GL_EXT_shader_explicit_arithmetic_types_int16 : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
 
@@ -36,6 +34,7 @@ struct DescriptorStuff {
     uint64_t indexAddress;
     uint64_t vertexDataAdress;
     uint vertexOffset;
+    vec3 chunkOffset;
 };
 
 layout(scalar, set = 0, binding = 3) readonly buffer DescriptorBuffer {
@@ -50,6 +49,12 @@ struct RayPayload {
 
 layout(location = 0) rayPayloadInEXT RayPayload payload;
 
+struct ShadowPayload {
+    bool occluded;
+};
+
+layout(location = 1) rayPayloadEXT ShadowPayload shadowPayload;
+
 void main()
 {
 
@@ -62,13 +67,20 @@ void main()
     uint i1 = ibuf.indices[3 * gl_PrimitiveID + 1] + desc.vertexOffset;
     uint i2 = ibuf.indices[3 * gl_PrimitiveID + 2] + desc.vertexOffset;
 
+    vec3 p0 = vbuf.positions[i0];
+    vec3 p1 = vbuf.positions[i1];
+    vec3 p2 = vbuf.positions[i2];
 
+    vec3 bary = vec3(attribs.x, attribs.y, 1.0 - attribs.x - attribs.y);
 
-    Vertex v = dataBuf.verticesData[i0];
+    vec3 objectPos = bary.x * p1 + bary.y * p2 + bary.z * p0;
 
-    vec3 normal = normalize(vec3(float(v.nnx), float(v.nny), float(v.nnz)) / 255.0 * 2.0 - 1.0);
-    float ndotl = max(abs(dot(normal, -payload.rayDir)), 0.5);
-    payload.hitValue = vec3(float(v.br) / 255.0, float(v.bg) / 255.0, float(v.bb) / 255.0) * ndotl;
-
-
+    payload.hitValue = clamp((objectPos + vec3(desc.chunkOffset)) / 64.0, 0.0, 1.0);
 }
+
+
+
+    //Vertex data = dataBuf.verticesData[i0];
+
+    //vec3 normal = normalize(vec3(float(data.nnx), float(data.nny), float(data.nnz)) / 255.0 * 2.0 - 1.0);
+    //float ndotl = max(abs(dot(normal, -payload.rayDir)), 0.5);

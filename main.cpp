@@ -18,6 +18,7 @@ struct DescriptorPackage{
     VkDeviceAddress indexAddress;
     VkDeviceAddress vertexAttributesAddress;
     uint32_t vertexOffset;
+    vec3 chunkOffset;
 };
 
 // test anything
@@ -198,7 +199,7 @@ struct Shaders
             indexBuffer->device_address(),
             vertexBuffer->device_address(),//WRONG
             0,
-            //vec3(1, 0, 1)
+            vec3(1, 1, 1)
         }};
 
         topLevelAS->createTopLevelAccelerationStructure(instances);
@@ -386,7 +387,8 @@ int main(int argc, char **argv)
                         loaded->mesh->buf->device_address(),
                         loaded->mesh->iBuf->device_address(),
                         loaded->mesh->vertexAttributesBuf->device_address(),
-                        0
+                        0,
+                        vec3(cx * 16, -75, cz * 16)
                     };
 
                     loadedChunkData[{cx, cz}] = {transformMatrix, loaded->accel.get(), desc};
