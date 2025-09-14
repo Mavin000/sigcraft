@@ -41,17 +41,14 @@ void main()
 
 
     if (cosTheta > cos(emitterRadius)) {
-        // Bright yellowish sun
-        payload.hitValue = vec3(1.0, 0.95, 0.6) * 5.0; // scale intensity
+        payload.hitValue = vec3(1.0, 0.95, 0.6) * 2.0;
     } else {
-        // Default sky color (light blue)
-        payload.hitValue = vec3(0.3, 0.5, 0.9);
+        float t = 0.5 * (payload.rayDir.y + 1.0);
+        payload.hitValue = mix(vec3(0.2, 0.3, 0.8), vec3(0.6, 0.8, 1.0), t);
     }
 
 
 
 
-    //float t = 0.5 * (payload.rayDir.y + 1.0);
-
-    //payload.hitValue = mix(vec3(0.2, 0.3, 0.8), vec3(0.6, 0.8, 1.0), t);
+    
 }
