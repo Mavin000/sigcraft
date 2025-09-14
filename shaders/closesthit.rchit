@@ -9,6 +9,8 @@
 
 hitAttributeEXT vec2 attribs;
 
+layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
+
 struct Vertex {
     int vx; int vy; int vz;
     uint tt;
@@ -35,6 +37,7 @@ struct DescriptorStuff {
     uint64_t vertexDataAdress;
     uint vertexOffset;
     vec3 chunkOffset;
+    uint time;
 };
 
 layout(scalar, set = 0, binding = 3) readonly buffer DescriptorBuffer {
@@ -49,11 +52,7 @@ struct RayPayload {
 
 layout(location = 0) rayPayloadInEXT RayPayload payload;
 
-struct ShadowPayload {
-    bool occluded;
-};
-
-layout(location = 1) rayPayloadEXT ShadowPayload shadowPayload;
+layout(location = 1) rayPayloadEXT bool shadowHitPayload;
 
 void main()
 {
@@ -73,14 +72,38 @@ void main()
 
     vec3 bary = vec3(attribs.x, attribs.y, 1.0 - attribs.x - attribs.y);
 
-    vec3 objectPos = bary.x * p1 + bary.y * p2 + bary.z * p0;
+    Vertex data = dataBuf.verticesData[i0];
+    vec3 normal = normalize(vec3(float(data.nnx), float(data.nny), float(data.nnz)) / 255.0 * 2.0 - 1.0);
 
-    payload.hitValue = clamp((objectPos + vec3(desc.chunkOffset)) / 64.0, 0.0, 1.0);
+    vec3 objectPos = bary.x * p1 + bary.y * p2 + bary.z * p0;
+    vec3 origin = objectPos + vec3(desc.chunkOffset) + normal * 0.001;
+
+
+    vec3 sunDir = normalize(vec3(0.1,0.3,0.8));
+
+    shadowHitPayload = false;
+
+    traceRayEXT(
+        topLevelAS,
+        gl_RayFlagsOpaqueEXT,
+        0xFF,
+        1,  
+        0,  
+        1,  
+        origin, 0.001,
+        sunDir, 10000.0,
+        1
+    );
+
+    float sunlight = shadowHitPayload ? 0.0 : 1.0;
+
+    float ndotl = dot(normal, sunDir);
+    vec3 albedo = vec3(float(data.br) / 255.0, float(data.bg) / 255.0, float(data.bb) / 255.0);
+
+    payload.hitValue = albedo * 0.2 + clamp(abs(dot(normal, normalize(vec3(0,1,0.5)))), 0.0, 0.1) + sunlight * ndotl * albedo + sunlight * albedo * pow(clamp(dot(reflect(payload.rayDir, normal), sunDir), 0, 1), 30);
+    //payload.hitValue = clamp((objectPos + vec3(desc.chunkOffset)) * 64.0, 0.0, 1.0);
+    //payload.hitValue.rgb = normal * 0.5 + vec3(0.5);
 }
 
-
-
-    //Vertex data = dataBuf.verticesData[i0];
-
-    //vec3 normal = normalize(vec3(float(data.nnx), float(data.nny), float(data.nnz)) / 255.0 * 2.0 - 1.0);
     //float ndotl = max(abs(dot(normal, -payload.rayDir)), 0.5);
+

@@ -215,15 +215,21 @@ struct Shaders
 
         auto raygen = load_shader("raygen.rgen.spv", "main", VK_SHADER_STAGE_RAYGEN_BIT_KHR);
         auto hit = load_shader("closesthit.rchit.spv", "main", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+        auto shadowhit = load_shader("shadowhit.rchit.spv", "main", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
         auto miss = load_shader("miss.rmiss.spv", "main", VK_SHADER_STAGE_MISS_BIT_KHR);
+        auto shadowmiss = load_shader("shadowmiss.rmiss.spv", "main", VK_SHADER_STAGE_MISS_BIT_KHR);
 
         std::vector<imr::RayTracingPipeline::HitShadersTriple> hits;
         hits.push_back({
             .closest_hit = hit,
         });
+        hits.push_back({
+            .closest_hit = shadowhit,
+        });
 
         std::vector<imr::ShaderEntryPoint*> misses;
         misses.emplace_back(miss);
+        misses.emplace_back(shadowmiss);
 
         pipeline = std::make_unique<imr::RayTracingPipeline>(d, raygen, hits, misses);
 
@@ -292,7 +298,7 @@ int main(int argc, char **argv)
     auto prev_frame = imr_get_time_nano();
     float delta = 0;
 
-    camera = {{0, 0, 3}, {0, 0}, 60};
+    camera = {{0, 150, 3}, {0, 0}, 60};
 
     auto shaders = std::make_unique<Shaders>(*device, swapchain);
 
@@ -385,15 +391,16 @@ int main(int argc, char **argv)
                 if (all_neighbours_loaded) {
                     loaded->mesh = std::make_unique<ChunkMesh>(*device, n);
 
-                    VkTransformMatrixKHR transformMatrix = {
-                        1.0f, 0.0f, 0.0f, float(cx * 8),
-                        0.0f, 1.0f, 0.0f, -75.0f,
-                        0.0f, 0.0f, 1.0f, float(cz * 8),
-                    };
+                    //printf("fff %f\n", transformMatrix.matrix[0][3]);
 
+                    VkTransformMatrixKHR identityMatrix = {
+                        1.0f, 0.0f, 0.0f, 0.f,
+                        0.0f, 1.0f, 0.0f, 0.f,
+                        0.0f, 0.0f, 1.0f, 0.f,
+                    };
                     std::vector<imr::AccelerationStructure::TriangleGeometry> geometry = {{loaded->mesh->buf->device_address(), loaded->mesh->iBuf->device_address(),
                                                                                            loaded->mesh->num_verts, static_cast<uint32_t>(loaded->mesh->num_verts / 3),
-                                                                                           transformMatrix}};
+                                                                                           identityMatrix}};
                     if (!loaded->accel) {
                         loaded->accel = std::make_unique<imr::AccelerationStructure>(*device);
                         loaded->accel->createBottomLevelAccelerationStructure(geometry);
@@ -404,7 +411,13 @@ int main(int argc, char **argv)
                         loaded->mesh->iBuf->device_address(),
                         loaded->mesh->vertexAttributesBuf->device_address(),
                         0,
-                        vec3(cx * 16, -75, cz * 16)
+                        vec3(cx * 16, 0, cz * 16)
+                    };
+
+                    VkTransformMatrixKHR transformMatrix = {
+                        1.0f, 0.0f, 0.0f, float(cx * 16),
+                        0.0f, 1.0f, 0.0f, 0,
+                        0.0f, 0.0f, 1.0f, float(cz * 16),
                     };
 
                     loadedChunkData[{cx, cz}] = {transformMatrix, loaded->accel.get(), desc};
@@ -414,7 +427,7 @@ int main(int argc, char **argv)
             int player_chunk_x = camera.position.x / 16;
             int player_chunk_z = camera.position.z / 16;
 
-            int radius = 8;
+            int radius = 12;
             for (int dx = -radius; dx <= radius; dx++) {
                 for (int dz = -radius; dz <= radius; dz++) {
                     load_chunk(player_chunk_x + dx, player_chunk_z + dz);
