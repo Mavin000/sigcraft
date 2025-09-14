@@ -121,6 +121,7 @@ struct UniformData
 {
     mat4 viewInverse;
     mat4 projInverse;
+    float time;
 } uniformData;
 
 Camera camera;
@@ -140,6 +141,8 @@ std::vector<std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *>> inst
 
 std::unique_ptr<imr::Buffer> descriptorBuffer;
 std::vector<DescriptorPackage> globalDescriptors;
+
+
 
 struct Shaders
 {
@@ -311,6 +314,7 @@ int main(int argc, char **argv)
 
         uniformData.projInverse = invert_mat4(camera_get_proj_mat4(&camera, storage_image->size().width, storage_image->size().height));
         uniformData.viewInverse = invert_mat4(camera_get_pure_view_mat4(&camera));
+        uniformData.time = fmod(imr_get_time_nano() / 1e9, 60.0f) / 60.0f;
         ubo->uploadDataSync(0, sizeof(uniformData), &uniformData);
 
         swapchain.renderFrameSimplified([&](imr::Swapchain::SimplifiedRenderContext &context) 

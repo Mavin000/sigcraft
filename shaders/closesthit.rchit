@@ -11,6 +11,13 @@ hitAttributeEXT vec2 attribs;
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 
+layout(binding = 2, set = 0) uniform Ubo
+{
+	mat4 viewInverse;
+	mat4 projInverse;
+	float time;
+} ubo;
+
 struct Vertex {
     int vx; int vy; int vz;
     uint tt;
@@ -37,7 +44,6 @@ struct DescriptorStuff {
     uint64_t vertexDataAdress;
     uint vertexOffset;
     vec3 chunkOffset;
-    uint time;
 };
 
 layout(scalar, set = 0, binding = 3) readonly buffer DescriptorBuffer {
@@ -79,7 +85,10 @@ void main()
     vec3 origin = objectPos + vec3(desc.chunkOffset) + normal * 0.001;
 
 
-    vec3 sunDir = normalize(vec3(0.1,0.3,0.8));
+    float angle = ubo.time * 2.0 * 3.14159265359;
+
+
+    vec3 sunDir = normalize(vec3(0.0, sin(angle), cos(angle)));
 
     shadowHitPayload = false;
 
@@ -101,9 +110,6 @@ void main()
     vec3 albedo = vec3(float(data.br) / 255.0, float(data.bg) / 255.0, float(data.bb) / 255.0);
 
     payload.hitValue = albedo * 0.2 + clamp(abs(dot(normal, normalize(vec3(0,1,0.5)))), 0.0, 0.1) + sunlight * ndotl * albedo + sunlight * albedo * pow(clamp(dot(reflect(payload.rayDir, normal), sunDir), 0, 1), 30);
-    //payload.hitValue = clamp((objectPos + vec3(desc.chunkOffset)) * 64.0, 0.0, 1.0);
-    //payload.hitValue.rgb = normal * 0.5 + vec3(0.5);
-}
 
-    //float ndotl = max(abs(dot(normal, -payload.rayDir)), 0.5);
+}
 
