@@ -12,6 +12,9 @@ out vec3 normal;
 layout(location = 2)
 out vec2 uv;
 
+layout(location = 3)
+out uint texId;
+
 layout(location = 0)
 in ivec3 vertexIn;
 
@@ -23,6 +26,9 @@ in vec3 colorIn;
 
 layout(location = 3)
 in vec2 uvIn;
+
+layout(location = 4)
+in uint texIdIn;
 
 layout(scalar, push_constant) uniform T {
     mat4 matrix;
@@ -37,4 +43,5 @@ void main() {
     color = colorIn;
     normal = normalIn;
     uv = uvIn;
+    texId = texIdIn;
 }

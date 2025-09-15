@@ -82,6 +82,12 @@ struct Shaders {
                 .format = VK_FORMAT_R8G8_UNORM,
                 .offset = offsetof(ChunkMesh::Vertex, tt),
             },
+            {
+                .location = 4,
+                .binding = 0,
+                .format = VK_FORMAT_R8_UINT,
+                .offset = offsetof(ChunkMesh::Vertex, tex_id),
+            },
         };
 
         VkPipelineVertexInputStateCreateInfo vertex_input {
@@ -132,13 +138,12 @@ struct Shaders {
 #include <filesystem>
 
 struct Textures {
-    void load_texture(std::string name, std::unique_ptr<imr::Image>& dst) {
-        auto& vk = _device.dispatch;
+    std::filesystem::path find_textures_path() {
         const char* loc = imr_get_executable_location();
         std::filesystem::path path = std::filesystem::path(loc).parent_path();
         while (true) {
-            if (std::filesystem::exists(path.string() + "/" + name))
-                break;
+            if (std::filesystem::exists(path.string() + "/textures"))
+                return std::filesystem::path(path.string() + "/textures");
             auto parent = path.parent_path();
             if (parent == path) {
                 throw std::runtime_error("failed to find path");
@@ -146,7 +151,29 @@ struct Textures {
                 path = parent;
             }
         }
-        auto img = load_png(path.string() + "/" + name);
+    }
+
+    void load_all_textures() {
+        auto textures_path = find_textures_path();
+        auto block_textures_path = std::filesystem::path(textures_path.string() + "/blocks");
+        for (auto file : std::filesystem::directory_iterator(block_textures_path)) {
+            if (file.is_regular_file() && file.path().string().ends_with(".png")) {
+                auto texture_name = file.path().filename().string();
+                texture_name = texture_name.substr(0, texture_name.size() - 4);
+                printf("Loading block texture: %s\n", texture_name.c_str());
+
+                std::unique_ptr<imr::Image> texture;
+                load_texture(file.path(), texture);
+                block_textures_map[texture_name] = block_textures.size();
+                block_textures.emplace_back(std::move(texture));
+            }
+        }
+    }
+
+    void load_texture(std::filesystem::path path, std::unique_ptr<imr::Image>& dst) {
+        auto& vk = _device.dispatch;
+
+        auto img = load_png(path.string());
         assert(img);
         dst = std::make_unique<imr::Image>(_device, VK_IMAGE_TYPE_2D, VkExtent3D({ img->width, img->height, 1}), VK_FORMAT_R8G8B8A8_UNORM, VkImageUsageFlagBits(VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
 
@@ -190,7 +217,7 @@ struct Textures {
     }
 
     Textures(imr::Device& d) : _device(d) {
-        load_texture("textures/blocks/bricks.png", bricks);
+        load_all_textures();
         VkSamplerCreateInfo create_sampler = {
             .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
             .magFilter = VK_FILTER_NEAREST,
@@ -210,7 +237,8 @@ struct Textures {
     VkSampler sampler;
 
     imr::Device& _device;
-    std::unique_ptr<imr::Image> bricks;
+    std::vector<std::unique_ptr<imr::Image>> block_textures;
+    std::unordered_map<std::string, int> block_textures_map;
 };
 
 int main(int argc, char** argv) {
@@ -373,7 +401,8 @@ int main(int argc, char** argv) {
 
                 auto binding_helper = pipeline->create_bind_helper();
                 binding_helper->set_sampler(0, 0, textures->sampler);
-                binding_helper->set_texture_image(0, 1, *textures->bricks);
+                for (int i = 0; i < textures->block_textures.size(); i++)
+                    binding_helper->set_texture_image(0, 1, textures->block_textures[i]->whole_image_view(), i);
                 binding_helper->commit(cmdbuf);
 
                 for (auto chunk : world.loaded_chunks()) {

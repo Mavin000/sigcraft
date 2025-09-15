@@ -79,6 +79,7 @@ v.nnz = nz * 127 + 128;            \
 v.br = color.x * 255;            \
 v.bg = color.y * 255;            \
 v.bb = color.z * 255;            \
+v.tex_id = rand() % 14;           \
 add_vertex();
 
 static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z) {
