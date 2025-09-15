@@ -23,7 +23,7 @@ layout(set = 0, binding = 0)
 uniform sampler nn;
 
 layout(set = 0, binding = 1)
-uniform texture2D textures[14];
+uniform texture2D textures[15];
 
 void main() {
     colorOut = vec4(normal * 0.5 + vec3(0.5), 1.0);

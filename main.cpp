@@ -304,7 +304,7 @@ int main(int argc, char** argv) {
                 case BlockLava: return id_safe("lava");
                 case BlockUnknown:break;
             }
-            return 0;
+            return id_safe("notex");
         }
 
         std::unordered_map<int, int> _cache;
