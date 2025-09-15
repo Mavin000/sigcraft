@@ -79,10 +79,10 @@ v.nnz = nz * 127 + 128;            \
 v.br = color.x * 255;            \
 v.bg = color.y * 255;            \
 v.bb = color.z * 255;            \
-v.tex_id = rand() % 14;           \
+v.tex_id = tid;           \
 add_vertex();
 
-static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z) {
+static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&](){
         uint8_t tmp[sizeof(v)];
@@ -93,7 +93,7 @@ static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_X_FACE(V)
 }
 
-static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z) {
+static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&](){
         uint8_t tmp[sizeof(v)];
@@ -104,7 +104,7 @@ static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigne
     PLUS_X_FACE(V)
 }
 
-static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z) {
+static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&](){
         uint8_t tmp[sizeof(v)];
@@ -115,7 +115,7 @@ static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_Y_FACE(V)
 }
 
-static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z) {
+static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&](){
         uint8_t tmp[sizeof(v)];
@@ -126,7 +126,7 @@ static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigne
     PLUS_Y_FACE(V)
 }
 
-static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z) {
+static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&](){
         uint8_t tmp[sizeof(v)];
@@ -137,7 +137,7 @@ static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_Z_FACE(V)
 }
 
-static void paste_plus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z) {
+static void paste_plus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
     float tmp[5];
     ChunkMesh::Vertex v;
     auto add_vertex = [&](){
@@ -182,7 +182,7 @@ static BlockData access_safe(const ChunkData* chunk, ChunkNeighbors& neighbours,
     return BlockAir;
 }
 
-void chunk_mesh(const ChunkData* chunk, ChunkNeighbors& neighbours, std::vector<uint8_t>& g, size_t* num_verts) {
+void chunk_mesh(const ChunkData* chunk, ChunkNeighbors& neighbours, std::vector<uint8_t>& g, size_t* num_verts, BlockTextureMapping& mapping) {
     *num_verts = 0;
     for (int section = 0; section < CUNK_CHUNK_SECTIONS_COUNT; section++) {
         for (int x = 0; x < CUNK_CHUNK_SIZE; x++)
@@ -196,29 +196,29 @@ void chunk_mesh(const ChunkData* chunk, ChunkNeighbors& neighbours, std::vector<
                         color.y = block_colors[block_data].g;
                         color.z = block_colors[block_data].b;
                         if (access_safe(chunk, neighbours, x, world_y + 1, z) == BlockAir) {
-                            paste_plus_y_face(g, color, x, world_y, z);
+                            paste_plus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), TOP));
                             *num_verts += 6;
                         }
                         if (access_safe(chunk, neighbours, x, world_y - 1, z) == BlockAir) {
-                            paste_minus_y_face(g, color, x, world_y, z);
+                            paste_minus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), BOTTOM));
                             *num_verts += 6;
                         }
 
                         if (access_safe(chunk, neighbours, x + 1, world_y, z) == BlockAir) {
-                            paste_plus_x_face(g, color, x, world_y, z);
+                            paste_plus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), EAST));
                             *num_verts += 6;
                         }
                         if (access_safe(chunk, neighbours, x - 1, world_y, z) == BlockAir) {
-                            paste_minus_x_face(g, color, x, world_y, z);
+                            paste_minus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), WEST));
                             *num_verts += 6;
                         }
 
                         if (access_safe(chunk, neighbours, x, world_y, z + 1) == BlockAir) {
-                            paste_plus_z_face(g, color, x, world_y, z);
+                            paste_plus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), SOUTH));
                             *num_verts += 6;
                         }
                         if (access_safe(chunk, neighbours, x, world_y, z - 1) == BlockAir) {
-                            paste_minus_z_face(g, color, x, world_y, z);
+                            paste_minus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), NORTH));
                             *num_verts += 6;
                         }
                     }
@@ -226,9 +226,9 @@ void chunk_mesh(const ChunkData* chunk, ChunkNeighbors& neighbours, std::vector<
     }
 }
 
-ChunkMesh::ChunkMesh(imr::Device& d, ChunkNeighbors& n) {
+ChunkMesh::ChunkMesh(imr::Device& d, ChunkNeighbors& n, BlockTextureMapping& mapping) {
     std::vector<uint8_t> g;
-    chunk_mesh(n.neighbours[1][1], n, g, &num_verts);
+    chunk_mesh(n.neighbours[1][1], n, g, &num_verts, mapping);
 
     //fprintf(stderr, "%zu vertices, totalling %zu KiB of data\n", num_verts, num_verts * sizeof(float) * 5 / 1024);
     //fflush(stderr);

@@ -28,5 +28,8 @@ uniform texture2D textures[14];
 void main() {
     colorOut = vec4(normal * 0.5 + vec3(0.5), 1.0);
     colorOut = vec4(color * 0.8 + 0.2 * dot(normal, normalize(vec3(1.0, 0.5, 0.1))), 1.0);
-    colorOut = texture(sampler2D(textures[nonuniformEXT(texId)], nn), uv);
+    vec4 albedo = texture(sampler2D(textures[nonuniformEXT(texId)], nn), uv);
+    if (albedo.a < 1.0)
+        albedo.rgb *= vec3(0.4, 2.0, 0.5);
+    colorOut = vec4(albedo.rgb * (0.8 + 0.2 * dot(normal, normalize(vec3(1.0, 0.5, 0.1)))), 1.0);
 }

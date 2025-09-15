@@ -271,6 +271,46 @@ int main(int argc, char** argv) {
     auto shaders = std::make_unique<Shaders>(device, swapchain);
     auto textures = std::make_unique<Textures>(device);
 
+    struct Texturer : BlockTextureMapping {
+        Texturer(Textures& textures) : _textures(textures) {}
+
+        unsigned int id_safe(std::string texture_name) {
+            auto found = _textures.block_textures_map.find(texture_name);
+            if (found != _textures.block_textures_map.end())
+                return found->second;
+            return 0;
+        }
+
+        unsigned int get_block_texture(BlockId id, BlockFace face) override {
+            switch (id) {
+                case BlockAir:break;
+                case BlockStone: return id_safe("stone");
+                case BlockDirt: return id_safe("dirt");
+                case BlockTallGrass:
+                case BlockGrass: {
+                    if (face == TOP)
+                        return id_safe("grass_top");
+                    if (face == BOTTOM)
+                        return id_safe("dirt");
+                    return id_safe("grass_side");
+                }
+                case BlockSand: return id_safe("sand");
+                case BlockGravel: return id_safe("gravel");
+                case BlockPlanks: return id_safe("planks");
+                case BlockWater: return id_safe("water");
+                case BlockLeaves: return id_safe("leaves");
+                case BlockWood: return id_safe("wood");
+                case BlockSnow: return id_safe("snow");
+                case BlockLava: return id_safe("lava");
+                case BlockUnknown:break;
+            }
+            return 0;
+        }
+
+        std::unordered_map<int, int> _cache;
+        Textures& _textures;
+    } texturer(*textures);
+
     auto& vk = device.dispatch;
     while (!glfwWindowShouldClose(window)) {
         fps_counter.tick();
@@ -385,7 +425,7 @@ int main(int argc, char** argv) {
                             }
                         }
                         if (all_neighbours_loaded)
-                            loaded->mesh = std::make_unique<ChunkMesh>(device, n);
+                            loaded->mesh = std::make_unique<ChunkMesh>(device, n, texturer);
                     }
                 };
 

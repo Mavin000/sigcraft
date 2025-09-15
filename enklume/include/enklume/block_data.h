@@ -10,6 +10,15 @@
 #define CUNK_CHUNK_MAX_HEIGHT 384
 #define CUNK_CHUNK_SECTIONS_COUNT CUNK_CHUNK_MAX_HEIGHT / CUNK_CHUNK_SIZE
 
+enum BlockFace {
+    WEST,
+    EAST,
+    NORTH,
+    SOUTH,
+    BOTTOM,
+    TOP,
+};
+
 typedef uint32_t BlockData;
 
 #define BLOCK_TYPES(B) \

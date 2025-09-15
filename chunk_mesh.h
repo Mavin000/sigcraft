@@ -9,11 +9,15 @@ struct ChunkNeighbors {
     const ChunkData* neighbours[3][3];
 };
 
+struct BlockTextureMapping {
+    virtual unsigned get_block_texture(BlockId, BlockFace) = 0;
+};
+
 struct ChunkMesh {
     std::unique_ptr<imr::Buffer> buf;
     size_t num_verts;
 
-    ChunkMesh(imr::Device&, ChunkNeighbors& n);
+    ChunkMesh(imr::Device&, ChunkNeighbors& n, BlockTextureMapping& mapping);
 
     struct Vertex {
         int16_t vx, vy, vz;
