@@ -76,6 +76,12 @@ struct Shaders {
                 .format = VK_FORMAT_R8G8B8_UNORM,
                 .offset = offsetof(ChunkMesh::Vertex, br),
             },
+            {
+                .location = 3,
+                .binding = 0,
+                .format = VK_FORMAT_R8G8_UNORM,
+                .offset = offsetof(ChunkMesh::Vertex, tt),
+            },
         };
 
         VkPipelineVertexInputStateCreateInfo vertex_input {
@@ -122,6 +128,91 @@ struct Shaders {
     }
 };
 
+#include "load_png.h"
+#include <filesystem>
+
+struct Textures {
+    void load_texture(std::string name, std::unique_ptr<imr::Image>& dst) {
+        auto& vk = _device.dispatch;
+        const char* loc = imr_get_executable_location();
+        std::filesystem::path path = std::filesystem::path(loc).parent_path();
+        while (true) {
+            if (std::filesystem::exists(path.string() + "/" + name))
+                break;
+            auto parent = path.parent_path();
+            if (parent == path) {
+                throw std::runtime_error("failed to find path");
+            } else {
+                path = parent;
+            }
+        }
+        auto img = load_png(path.string() + "/" + name);
+        assert(img);
+        dst = std::make_unique<imr::Image>(_device, VK_IMAGE_TYPE_2D, VkExtent3D({ img->width, img->height, 1}), VK_FORMAT_R8G8B8A8_UNORM, VkImageUsageFlagBits(VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
+
+        size_t size = img->width * img->height * 4;
+        auto staging = imr::Buffer(_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        staging.uploadDataSync(0, size, img->pixels.get());
+
+        _device.executeCommandsSync([&](VkCommandBuffer cmdbuf) {
+            vk.cmdPipelineBarrier2KHR(cmdbuf, tmpPtr((VkDependencyInfo) {
+                .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+                .dependencyFlags = 0,
+                .imageMemoryBarrierCount = 1,
+                .pImageMemoryBarriers = tmpPtr((VkImageMemoryBarrier2) {
+                    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                    .srcStageMask = 0,
+                    .srcAccessMask = 0,
+                    .dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                    .dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT,
+                    .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                    .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+                    .image = dst->handle(),
+                    .subresourceRange = dst->whole_image_subresource_range()
+                })
+            }));
+
+            vkCmdCopyBufferToImage2(cmdbuf, tmpPtr<VkCopyBufferToImageInfo2>({
+                .sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2,
+                .srcBuffer = staging.handle,
+                .dstImage = dst->handle(),
+                .dstImageLayout = VK_IMAGE_LAYOUT_GENERAL,
+                .regionCount = 1,
+                .pRegions = tmpPtr<VkBufferImageCopy2>({
+                    .sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
+                    .bufferRowLength = (uint32_t) img->width,
+                    .bufferImageHeight = (uint32_t) img->height,
+                    .imageSubresource = dst->whole_image_subresource_layers(),
+                    .imageExtent = dst->size(),
+                }),
+            }));
+        });
+    }
+
+    Textures(imr::Device& d) : _device(d) {
+        load_texture("textures/blocks/bricks.png", bricks);
+        VkSamplerCreateInfo create_sampler = {
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .magFilter = VK_FILTER_NEAREST,
+            .minFilter = VK_FILTER_LINEAR,
+            .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+            .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        };
+        vkCreateSampler(_device.device, &create_sampler, nullptr, &sampler);
+    }
+
+    ~Textures() {
+        vkDestroySampler(_device.device, sampler, nullptr);
+    }
+
+    VkSampler sampler;
+
+    imr::Device& _device;
+    std::unique_ptr<imr::Image> bricks;
+};
+
 int main(int argc, char** argv) {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -150,6 +241,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<imr::Image> depthBuffer;
 
     auto shaders = std::make_unique<Shaders>(device, swapchain);
+    auto textures = std::make_unique<Textures>(device);
 
     auto& vk = device.dispatch;
     while (!glfwWindowShouldClose(window)) {
@@ -279,6 +371,11 @@ int main(int argc, char** argv) {
                     }
                 }
 
+                auto binding_helper = pipeline->create_bind_helper();
+                binding_helper->set_sampler(0, 0, textures->sampler);
+                binding_helper->set_texture_image(0, 1, *textures->bricks);
+                binding_helper->commit(cmdbuf);
+
                 for (auto chunk : world.loaded_chunks()) {
                     if (abs(chunk->cx - player_chunk_x) > radius || abs(chunk->cz - player_chunk_z) > radius) {
                         std::unique_ptr<ChunkMesh> stolen = std::move(chunk->mesh);
@@ -304,6 +401,10 @@ int main(int argc, char** argv) {
                     assert(mesh->num_verts > 0);
                     vkCmdDraw(cmdbuf, mesh->num_verts, 1, 0, 0);
                 }
+
+                context.addCleanupAction([=]() {
+                    delete binding_helper;
+                });
             });
 
             auto now = imr_get_time_nano();

@@ -9,6 +9,9 @@ out vec3 color;
 layout(location = 1)
 out vec3 normal;
 
+layout(location = 2)
+out vec2 uv;
+
 layout(location = 0)
 in ivec3 vertexIn;
 
@@ -17,6 +20,9 @@ in vec3 normalIn;
 
 layout(location = 2)
 in vec3 colorIn;
+
+layout(location = 3)
+in vec2 uvIn;
 
 layout(scalar, push_constant) uniform T {
     mat4 matrix;
@@ -30,4 +36,5 @@ void main() {
     int primid = gl_VertexIndex / 6;
     color = colorIn;
     normal = normalIn;
+    uv = uvIn;
 }

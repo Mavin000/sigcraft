@@ -9,10 +9,19 @@ in vec3 color;
 layout(location = 1)
 in vec3 normal;
 
+layout(location = 2)
+in vec2 uv;
+
 layout(location = 0)
 out vec4 colorOut;
+
+layout(set = 0, binding = 0)
+uniform sampler nn;
+layout(set = 0, binding = 1)
+uniform texture2D bricks;
 
 void main() {
     colorOut = vec4(normal * 0.5 + vec3(0.5), 1.0);
     colorOut = vec4(color * 0.8 + 0.2 * dot(normal, normalize(vec3(1.0, 0.5, 0.1))), 1.0);
+    colorOut = texture(sampler2D(bricks, nn), uv);
 }
