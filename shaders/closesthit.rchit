@@ -38,7 +38,7 @@ layout(buffer_reference, scalar) buffer VertexDataBuffer {
     Vertex verticesData[];
 };
 
-struct DescriptorStuff {
+struct ChunkRenderingData {
     uint64_t vertexAddress;
     uint64_t indexAddress;
     uint64_t vertexDataAdress;
@@ -47,7 +47,7 @@ struct DescriptorStuff {
 };
 
 layout(scalar, set = 0, binding = 3) readonly buffer DescriptorBuffer {
-    DescriptorStuff descriptors[];
+    ChunkRenderingData descriptors[];
 };
 
 
@@ -63,7 +63,7 @@ layout(location = 1) rayPayloadEXT bool shadowHitPayload;
 void main()
 {
 
-    DescriptorStuff desc = descriptors[gl_InstanceID];
+    ChunkRenderingData desc = descriptors[gl_InstanceID];
     IndexBuffer ibuf = IndexBuffer(desc.indexAddress);
     VertexBuffer vbuf = VertexBuffer(desc.vertexAddress);
     VertexDataBuffer dataBuf = VertexDataBuffer(desc.vertexDataAdress);

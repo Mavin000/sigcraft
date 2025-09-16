@@ -46,9 +46,5 @@ void main()
         float t = 0.5 * (payload.rayDir.y + 1.0);
         payload.hitValue = mix(vec3(0.2, 0.3, 0.8), vec3(0.6, 0.8, 1.0), t);
     }
-
-
-
-
     
 }
