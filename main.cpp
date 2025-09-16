@@ -244,6 +244,9 @@ struct Shaders
 
 int main(int argc, char **argv)
 {
+
+    auto startingTime = imr_get_time_nano();
+
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     auto window = glfwCreateWindow(1024, 1024, "Example", nullptr, nullptr);
@@ -314,7 +317,7 @@ int main(int argc, char **argv)
 
         uniformData.projInverse = invert_mat4(camera_get_proj_mat4(&camera, storage_image->size().width, storage_image->size().height));
         uniformData.viewInverse = invert_mat4(camera_get_pure_view_mat4(&camera));
-        uniformData.time = fmod(imr_get_time_nano() / 1e9, 60.0f) / 60.0f;
+        uniformData.time = fmod((imr_get_time_nano()-startingTime) / 1e9, 60.0f) / 60.0f;
         ubo->uploadDataSync(0, sizeof(uniformData), &uniformData);
 
         swapchain.renderFrameSimplified([&](imr::Swapchain::SimplifiedRenderContext &context) 
