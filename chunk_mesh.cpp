@@ -10,53 +10,53 @@ extern "C"
 #include <assert.h>
 #include <vector>
 
-#define MINUS_X_FACE(V)           \
-    V(-1, -1, -1, 0, 0, -1, 0, 0) \
-    V(-1, 1, -1, 0, 1, -1, 0, 0)  \
-    V(-1, 1, 1, 1, 1, -1, 0, 0)   \
-    V(-1, -1, -1, 0, 0, -1, 0, 0) \
-    V(-1, 1, 1, 1, 1, -1, 0, 0)   \
-    V(-1, -1, 1, 1, 0, -1, 0, 0)
+#define MINUS_X_FACE(V) \
+V(0, 0, 0, 0, 0, -1, 0, 0) \
+V(0, 1, 0, 0, 1, -1, 0, 0) \
+V(0, 1, 1, 1, 1, -1, 0, 0) \
+V(0, 0, 0, 0, 0, -1, 0, 0) \
+V(0, 1, 1, 1, 1, -1, 0, 0) \
+V(0, 0, 1, 1, 0, -1, 0, 0)
 
-#define PLUS_X_FACE(V)          \
-    V(1, 1, -1, 1, 1, 1, 0, 0)  \
-    V(1, -1, -1, 1, 0, 1, 0, 0) \
-    V(1, 1, 1, 0, 1, 1, 0, 0)   \
-    V(1, 1, 1, 0, 1, 1, 0, 0)   \
-    V(1, -1, -1, 1, 0, 1, 0, 0) \
-    V(1, -1, 1, 0, 0, 1, 0, 0)
+#define PLUS_X_FACE(V) \
+V(1, 1, 0, 1, 1, 1, 0, 0) \
+V(1, 0, 0, 1, 0, 1, 0, 0) \
+V(1, 1, 1, 0, 1, 1, 0, 0) \
+V(1, 1, 1, 0, 1, 1, 0, 0) \
+V(1, 0, 0, 1, 0, 1, 0, 0) \
+V(1, 0, 1, 0, 0, 1, 0, 0)
 
-#define MINUS_Z_FACE(V)           \
-    V(1, 1, -1, 0, 1, 0, 0, -1)   \
-    V(-1, -1, -1, 1, 0, 0, 0, -1) \
-    V(1, -1, -1, 0, 0, 0, 0, -1)  \
-    V(-1, 1, -1, 1, 1, 0, 0, -1)  \
-    V(-1, -1, -1, 1, 0, 0, 0, -1) \
-    V(1, 1, -1, 0, 1, 0, 0, -1)
+#define MINUS_Z_FACE(V) \
+V(1, 1, 0, 0, 1, 0, 0, -1) \
+V(0, 0, 0, 1, 0, 0, 0, -1) \
+V(1, 0, 0, 0, 0, 0, 0, -1) \
+V(0, 1, 0, 1, 1, 0, 0, -1) \
+V(0, 0, 0, 1, 0, 0, 0, -1) \
+V(1, 1, 0, 0, 1, 0, 0, -1)
 
-#define PLUS_Z_FACE(V)          \
-    V(1, -1, 1, 1, 0, 0, 0, 1)  \
-    V(-1, -1, 1, 0, 0, 0, 0, 1) \
-    V(1, 1, 1, 1, 1, 0, 0, 1)   \
-    V(1, 1, 1, 1, 1, 0, 0, 1)   \
-    V(-1, -1, 1, 0, 0, 0, 0, 1) \
-    V(-1, 1, 1, 0, 1, 0, 0, 1)
+#define PLUS_Z_FACE(V) \
+V(1, 0, 1, 1, 0, 0, 0, 1) \
+V(0, 0, 1, 0, 0, 0, 0, 1) \
+V(1, 1, 1, 1, 1, 0, 0, 1) \
+V(1, 1, 1, 1, 1, 0, 0, 1) \
+V(0, 0, 1, 0, 0, 0, 0, 1) \
+V(0, 1, 1, 0, 1, 0, 0, 1)
 
-#define MINUS_Y_FACE(V)           \
-    V(-1, -1, -1, 0, 0, 0, -1, 0) \
-    V(1, -1, 1, 1, 1, 0, -1, 0)   \
-    V(1, -1, -1, 1, 0, 0, -1, 0)  \
-    V(1, -1, 1, 1, 1, 0, -1, 0)   \
-    V(-1, -1, -1, 0, 0, 0, -1, 0) \
-    V(-1, -1, 1, 0, 1, 0, -1, 0)
+#define MINUS_Y_FACE(V) \
+V(0, 0, 0, 0, 0, 0, -1, 0) \
+V(1, 0, 1, 1, 1, 0, -1, 0) \
+V(1, 0, 0, 1, 0, 0, -1, 0) \
+V(1, 0, 1, 1, 1, 0, -1, 0) \
+V(0, 0, 0, 0, 0, 0, -1, 0) \
+V(0, 0, 1, 0, 1, 0, -1, 0)
 
-#define PLUS_Y_FACE(V)          \
-    V(1, 1, 1, 1, 0, 0, 1, 0)   \
-    V(-1, 1, -1, 0, 1, 0, 1, 0) \
-    V(1, 1, -1, 1, 1, 0, 1, 0)  \
-    V(-1, 1, 1, 0, 0, 0, 1, 0)  \
-    V(-1, 1, -1, 0, 1, 0, 1, 0) \
-    V(1, 1, 1, 1, 0, 0, 1, 0)
+#define PLUS_Y_FACE(V) \
+V(1, 1, 1, 1, 0, 0, 1, 0) \
+V(0, 1, 0, 0, 1, 0, 1, 0) \
+V(1, 1, 0, 1, 1, 0, 1, 0) \
+V(0, 1, 1, 0, 0, 0, 1, 0) \
+V(0, 1, 0, 0, 1, 0, 1, 0) \
+V(1, 1, 1, 1, 0, 0, 1, 0)
 
 #define CUBE(V)     \
     MINUS_X_FACE(V) \
@@ -68,21 +68,21 @@ extern "C"
 
 // #define V(cx, cy, cz, t, s, nx, ny, nz) tmp[0] = (int) ((cx + 1) / 2) + (float) x; tmp[1] = (int) ((cy + 1) / 2) + (float) y; tmp[2] = (int) ((cz + 1) / 2) + (float) z; tmp[3] = t; tmp[4] = s; g.push_back(tmp[0]); g.push_back(tmp[1]); g.push_back(tmp[2]); g.push_back(tmp[3]); g.push_back(tmp[4]);
 #define V(cx, cy, cz, t, s, nx, ny, nz) \
-    v.vx = ((cx + 1) / 2) + x;          \
-    v.vy = ((cy + 1) / 2) + y;          \
-    v.vz = ((cz + 1) / 2) + z;          \
-    v.tt = t * 255;                     \
-    v.ss = t * 255;                     \
-    v.nnx = nx * 127 + 128;             \
-    v.nny = ny * 127 + 128;             \
-    v.nnz = nz * 127 + 128;             \
-    v.br = color.x * 255;               \
-    v.bg = color.y * 255;               \
-    v.bb = color.z * 255;               \
-    add_vertex();
+v.vx = cx + x;             \
+v.vy = cy + y;             \
+v.vz = cz + z;             \
+v.tt = t * 255;             \
+v.ss = s * 255;             \
+v.nnx = nx * 127 + 128;            \
+v.nny = ny * 127 + 128;            \
+v.nnz = nz * 127 + 128;            \
+v.br = color.x * 255;            \
+v.bg = color.y * 255;            \
+v.bb = color.z * 255;            \
+v.tex_id = tid;           \
+add_vertex();
 
-static void paste_minus_x_face(std::vector<uint8_t> &g, nasl::vec3 color, unsigned x, unsigned y, unsigned z)
-{
+static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -94,8 +94,7 @@ static void paste_minus_x_face(std::vector<uint8_t> &g, nasl::vec3 color, unsign
     MINUS_X_FACE(V)
 }
 
-static void paste_plus_x_face(std::vector<uint8_t> &g, nasl::vec3 color, unsigned x, unsigned y, unsigned z)
-{
+static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -107,8 +106,7 @@ static void paste_plus_x_face(std::vector<uint8_t> &g, nasl::vec3 color, unsigne
     PLUS_X_FACE(V)
 }
 
-static void paste_minus_y_face(std::vector<uint8_t> &g, nasl::vec3 color, unsigned x, unsigned y, unsigned z)
-{
+static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -120,8 +118,7 @@ static void paste_minus_y_face(std::vector<uint8_t> &g, nasl::vec3 color, unsign
     MINUS_Y_FACE(V)
 }
 
-static void paste_plus_y_face(std::vector<uint8_t> &g, nasl::vec3 color, unsigned x, unsigned y, unsigned z)
-{
+static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -133,8 +130,7 @@ static void paste_plus_y_face(std::vector<uint8_t> &g, nasl::vec3 color, unsigne
     PLUS_Y_FACE(V)
 }
 
-static void paste_minus_z_face(std::vector<uint8_t> &g, nasl::vec3 color, unsigned x, unsigned y, unsigned z)
-{
+static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -146,8 +142,7 @@ static void paste_minus_z_face(std::vector<uint8_t> &g, nasl::vec3 color, unsign
     MINUS_Z_FACE(V)
 }
 
-static void paste_plus_z_face(std::vector<uint8_t> &g, nasl::vec3 color, unsigned x, unsigned y, unsigned z)
-{
+static void paste_plus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
     float tmp[5];
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
@@ -207,8 +202,7 @@ static BlockData access_safe(const ChunkData *chunk, ChunkNeighbors &neighbours,
     return BlockAir;
 }
 
-void chunk_mesh(const ChunkData *chunk, ChunkNeighbors &neighbours, std::vector<uint8_t> &g, size_t *num_verts)
-{
+void chunk_mesh(const ChunkData* chunk, ChunkNeighbors& neighbours, std::vector<uint8_t>& g, size_t* num_verts, BlockTextureMapping& mapping) {
     *num_verts = 0;
     for (int section = 0; section < CUNK_CHUNK_SECTIONS_COUNT; section++)
     {
@@ -224,36 +218,30 @@ void chunk_mesh(const ChunkData *chunk, ChunkNeighbors &neighbours, std::vector<
                         color.x = block_colors[block_data].r;
                         color.y = block_colors[block_data].g;
                         color.z = block_colors[block_data].b;
-                        if (access_safe(chunk, neighbours, x, world_y + 1, z) == BlockAir)
-                        {
-                            paste_plus_y_face(g, color, x, world_y, z);
+                        if (access_safe(chunk, neighbours, x, world_y + 1, z) == BlockAir) {
+                            paste_plus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), TOP));
                             *num_verts += 6;
                         }
-                        if (access_safe(chunk, neighbours, x, world_y - 1, z) == BlockAir)
-                        {
-                            paste_minus_y_face(g, color, x, world_y, z);
-                            *num_verts += 6;
-                        }
-
-                        if (access_safe(chunk, neighbours, x + 1, world_y, z) == BlockAir)
-                        {
-                            paste_plus_x_face(g, color, x, world_y, z);
-                            *num_verts += 6;
-                        }
-                        if (access_safe(chunk, neighbours, x - 1, world_y, z) == BlockAir)
-                        {
-                            paste_minus_x_face(g, color, x, world_y, z);
+                        if (access_safe(chunk, neighbours, x, world_y - 1, z) == BlockAir) {
+                            paste_minus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), BOTTOM));
                             *num_verts += 6;
                         }
 
-                        if (access_safe(chunk, neighbours, x, world_y, z + 1) == BlockAir)
-                        {
-                            paste_plus_z_face(g, color, x, world_y, z);
+                        if (access_safe(chunk, neighbours, x + 1, world_y, z) == BlockAir) {
+                            paste_plus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), EAST));
                             *num_verts += 6;
                         }
-                        if (access_safe(chunk, neighbours, x, world_y, z - 1) == BlockAir)
-                        {
-                            paste_minus_z_face(g, color, x, world_y, z);
+                        if (access_safe(chunk, neighbours, x - 1, world_y, z) == BlockAir) {
+                            paste_minus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), WEST));
+                            *num_verts += 6;
+                        }
+
+                        if (access_safe(chunk, neighbours, x, world_y, z + 1) == BlockAir) {
+                            paste_plus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), SOUTH));
+                            *num_verts += 6;
+                        }
+                        if (access_safe(chunk, neighbours, x, world_y, z - 1) == BlockAir) {
+                            paste_minus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), NORTH));
                             *num_verts += 6;
                         }
                     }
@@ -261,10 +249,9 @@ void chunk_mesh(const ChunkData *chunk, ChunkNeighbors &neighbours, std::vector<
     }
 }
 
-ChunkMesh::ChunkMesh(imr::Device &d, ChunkNeighbors &n)
-{
+ChunkMesh::ChunkMesh(imr::Device& d, ChunkNeighbors& n, BlockTextureMapping& mapping) {
     std::vector<uint8_t> g;
-    chunk_mesh(n.neighbours[1][1], n, g, &num_verts);
+    chunk_mesh(n.neighbours[1][1], n, g, &num_verts, mapping);
 
     // fprintf(stderr, "%zu vertices, totalling %zu KiB of data\n", num_verts, num_verts * sizeof(float) * 5 / 1024);
     // fflush(stderr);
