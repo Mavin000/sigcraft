@@ -57,110 +57,52 @@ uniform sampler nn;
 layout(set = 0, binding = 5)
 uniform texture2D textures[15];
 
-
-
-
-
 struct RayPayload {
-	vec3 hitValue;
+    bool isHit;
+	vec3 color;
 	vec3 rayDir;
+    vec3 hitPos;
+    vec3 hitNormal;
 };
 
 layout(location = 0) rayPayloadInEXT RayPayload payload;
 
-layout(location = 1) rayPayloadEXT bool shadowHitPayload;
 
 
 
 
-// void main()
-// {
 
-//     ChunkRenderingData desc = descriptors[gl_InstanceID];
-//     IndexBuffer ibuf = IndexBuffer(desc.indexAddress);
-//     VertexBuffer vbuf = VertexBuffer(desc.vertexAddress);
-//     VertexDataBuffer dataBuf = VertexDataBuffer(desc.vertexDataAdress);
-
-//     uint i0 = ibuf.indices[3 * gl_PrimitiveID + 0] + desc.vertexOffset;
-//     uint i1 = ibuf.indices[3 * gl_PrimitiveID + 1] + desc.vertexOffset;
-//     uint i2 = ibuf.indices[3 * gl_PrimitiveID + 2] + desc.vertexOffset;
-
-//     vec3 p0 = vbuf.positions[i0];
-//     vec3 p1 = vbuf.positions[i1];
-//     vec3 p2 = vbuf.positions[i2];
-
-//     vec3 bary = vec3(attribs.x, attribs.y, 1.0 - attribs.x - attribs.y);
-
-//     Vertex data = dataBuf.verticesData[i0];
-//     vec3 normal = normalize(vec3(float(data.nnx), float(data.nny), float(data.nnz)) / 255.0 * 2.0 - 1.0);
-
-//     vec3 objectPos = bary.x * p1 + bary.y * p2 + bary.z * p0;
-//     vec3 origin = objectPos + vec3(desc.chunkOffset) + normal * 0.001;
-
-
-//     float angle = ubo.time * 2.0 * 3.14159265359;
-
-
-//     vec3 sunDir = normalize(vec3(0.0, sin(angle), cos(angle)));
-
-//     shadowHitPayload = false;
-
-//     traceRayEXT(
-//         topLevelAS,
-//         gl_RayFlagsOpaqueEXT,
-//         0xFF,
-//         1,  
-//         0,  
-//         1,  
-//         origin, 0.001,
-//         sunDir, 10000.0,
-//         1
-//     );
-
-//     float sunlight = shadowHitPayload ? 0.0 : 1.0;
-
-//     float ndotl = dot(normal, sunDir);
-//     vec3 albedo = texture(sampler2D(textures[nonuniformEXT(2)], nn), uv).xyz;
-//     //vec3 albedo = vec3(float(data.br) / 255.0, float(data.bg) / 255.0, float(data.bb) / 255.0);
-
-
-//     payload.hitValue = albedo * 0.2 + clamp(abs(dot(normal, normalize(vec3(0,1,0.5)))), 0.0, 0.1) + sunlight * ndotl * albedo + sunlight * albedo * pow(clamp(dot(reflect(payload.rayDir, normal), sunDir), 0, 1), 30);
-
-// }
 void main()
 {
-    // Fetch descriptor
+    payload.isHit = true;
+
     ChunkRenderingData desc = descriptors[gl_InstanceID];
-    IndexBuffer ibuf        = IndexBuffer(desc.indexAddress);
-    VertexBuffer vbuf       = VertexBuffer(desc.vertexAddress);
+    IndexBuffer ibuf = IndexBuffer(desc.indexAddress);
+    VertexBuffer vbuf = VertexBuffer(desc.vertexAddress);
     VertexDataBuffer dataBuf = VertexDataBuffer(desc.vertexDataAdress);
 
-    // Get triangle indices
     uint i0 = ibuf.indices[3 * gl_PrimitiveID + 0] + desc.vertexOffset;
     uint i1 = ibuf.indices[3 * gl_PrimitiveID + 1] + desc.vertexOffset;
     uint i2 = ibuf.indices[3 * gl_PrimitiveID + 2] + desc.vertexOffset;
 
-    // Barycentric coords
+    vec3 p0 = vbuf.positions[i0];
+    vec3 p1 = vbuf.positions[i1];
+    vec3 p2 = vbuf.positions[i2];
+
     vec3 bary = vec3(attribs.x, attribs.y, 1.0 - attribs.x - attribs.y);
 
-    // Vertex attributes
-    Vertex v0 = dataBuf.verticesData[i0];
-    Vertex v1 = dataBuf.verticesData[i1];
-    Vertex v2 = dataBuf.verticesData[i2];
+    Vertex data = dataBuf.verticesData[i0];
+    vec3 normal = normalize(vec3(float(data.nnx), float(data.nny), float(data.nnz)) / 255.0 * 2.0 - 1.0);
 
-    // Interpolate UV
-    vec2 uv0 = vec2(v0.tt, v0.ss) / 255.0;
-    vec2 uv1 = vec2(v1.tt, v1.ss) / 255.0;
-    vec2 uv2 = vec2(v2.tt, v2.ss) / 255.0;
-    vec2 uv  = uv0 * bary.z + uv1 * bary.x + uv2 * bary.y;
+    vec3 objectPos = bary.x * p1 + bary.y * p2 + bary.z * p0;
+    vec3 origin = objectPos + vec3(desc.chunkOffset) + normal * 0.001;
 
-    // Pick texture (same for all 3 verts of a face)
-    uint texId = v0.tex_id;
+    payload.hitPos = origin;
+    payload.hitNormal = normal;
+    //vec3 albedo = texture(sampler2D(textures[nonuniformEXT(2)], nn), uv).xyz;
+    vec3 albedo = vec3(float(data.br) / 255.0, float(data.bg) / 255.0, float(data.bb) / 255.0);
 
-    // Sample
-    vec3 albedo = texture(sampler2D(textures[nonuniformEXT(texId)], nn), uv).rgb;
 
-    // Output: just the texture color
-    payload.hitValue = albedo;
+    payload.color = albedo * 0.2 + clamp(abs(dot(normal, normalize(vec3(0,1,0.5)))), 0.0, 0.1);// + sunlight * ndotl * albedo + sunlight * albedo * pow(clamp(dot(reflect(payload.rayDir, normal), sunDir), 0, 1), 30);
+
 }
-

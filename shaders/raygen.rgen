@@ -11,14 +11,20 @@ layout(binding = 2, set = 0) uniform CameraProperties
 } cam;
 
 struct RayPayload {
-	vec3 hitValue;
+	bool isHit;
+	vec3 color;
 	vec3 rayDir;
+	vec3 hitPos;
+	vec3 hitNormal;
 };
 
 layout(location = 0) rayPayloadEXT RayPayload payload;
 
+layout(location = 1) rayPayloadEXT bool shadowHitPayload;
+
 void main()
 {
+	payload.isHit = false;
 	const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
 	vec2 inUV = pixelCenter/vec2(gl_LaunchSizeEXT.xy);
 	vec2 d = inUV * 2.0 - 1.0;
@@ -32,7 +38,7 @@ void main()
 	float tmax = 10000.0;
 
 
-	payload.hitValue = vec3(0.0);
+	payload.color = vec3(0.0);
 	payload.rayDir = direction.xyz;
 
 	traceRayEXT(
@@ -45,4 +51,35 @@ void main()
 		0
 	);
 
-	imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(payload.hitValue, 0.0));}
+
+
+	//
+	if (!payload.isHit) {
+		imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(payload.color, 0.0));
+		return;
+	}
+	float angle = cam.time * 2.0 * 3.14159265359;
+    vec3 sunDir = normalize(vec3(0.0, sin(angle), cos(angle)));
+
+    shadowHitPayload = false;
+
+    traceRayEXT(
+        topLevelAS,
+        gl_RayFlagsOpaqueEXT,
+        0xFF,
+        1,  
+        0,
+        1,
+        payload.hitPos, 0.001,
+        sunDir, 10000.0,
+        1
+    );
+
+    float sunlight = shadowHitPayload ? 0.0 : 1.0;
+
+    float ndotl = dot(payload.hitNormal, sunDir);
+	payload.color +=  sunlight * ndotl * payload.color + sunlight * payload.color * pow(clamp(dot(reflect(payload.rayDir, payload.hitNormal), sunDir), 0, 1), 30);
+	//
+
+	imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(payload.color, 0.0));
+}

@@ -6,8 +6,11 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
 struct RayPayload {
-	vec3 hitValue;
+	bool isHit;
+	vec3 color;
 	vec3 rayDir;
+    vec3 hitPos;
+    vec3 hitNormal;
 };
 
 layout(location = 0) rayPayloadInEXT RayPayload payload;
@@ -33,6 +36,7 @@ layout(scalar, set = 0, binding = 3) readonly buffer DescriptorBuffer {
 
 void main()
 {
+    payload.isHit = false;
     float angle = ubo.time * 2.0 * 3.14159265359;
 
     vec3 emitter = normalize(vec3(0.0, sin(angle), cos(angle)));
@@ -41,10 +45,10 @@ void main()
 
 
     if (cosTheta > cos(emitterRadius)) {
-        payload.hitValue = vec3(1.0, 0.95, 0.6) * 2.0;
+        payload.color = vec3(1.0, 0.95, 0.6) * 2.0;
     } else {
         float t = 0.5 * (payload.rayDir.y + 1.0);
-        payload.hitValue = mix(vec3(0.2, 0.3, 0.8), vec3(0.6, 0.8, 1.0), t);
+        payload.color = mix(vec3(0.2, 0.3, 0.8), vec3(0.6, 0.8, 1.0), t);
     }
     
 }
