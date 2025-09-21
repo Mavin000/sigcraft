@@ -13,9 +13,6 @@ struct BlockTextureMapping {
     virtual unsigned get_block_texture(BlockId, BlockFace) = 0;
 };
 
-struct BlockTextureMapping {
-    virtual unsigned get_block_texture(BlockId, BlockFace) = 0;
-};
 
 struct ChunkMesh
 {
@@ -45,6 +42,7 @@ struct ChunkMesh
         uint ss;
         uint nnx, nny, nnz;
         uint br, bg, bb;
+        uint tex_id;
     };
 };
 

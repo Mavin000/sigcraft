@@ -305,6 +305,7 @@ ChunkMesh::ChunkMesh(imr::Device& d, ChunkNeighbors& n, BlockTextureMapping& map
         uv.br = static_cast<uint>(v.br);
         uv.bg = static_cast<uint>(v.bg);
         uv.bb = static_cast<uint>(v.bb);
+        uv.tex_id = static_cast<uint>(v.tex_id);
         g2[i] = uv;
     }
 
