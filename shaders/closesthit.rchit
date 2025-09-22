@@ -91,18 +91,29 @@ void main()
 
     vec3 bary = vec3(attribs.x, attribs.y, 1.0 - attribs.x - attribs.y);
 
-    Vertex data = dataBuf.verticesData[i0];
-    vec3 normal = normalize(vec3(float(data.nnx), float(data.nny), float(data.nnz)) / 255.0 * 2.0 - 1.0);
+    Vertex data0 = dataBuf.verticesData[i0];
+    Vertex data1 = dataBuf.verticesData[i1];
+    Vertex data2 = dataBuf.verticesData[i2];
+    vec3 normal = normalize(vec3(float(data0.nnx), float(data0.nny), float(data0.nnz)) / 255.0 * 2.0 - 1.0);
 
     vec3 objectPos = bary.x * p1 + bary.y * p2 + bary.z * p0;
     vec3 origin = objectPos + vec3(desc.chunkOffset) + normal * 0.001;
 
     payload.hitPos = origin;
     payload.hitNormal = normal;
-    //vec3 albedo = texture(sampler2D(textures[nonuniformEXT(2)], nn), uv).xyz;
-    vec3 albedo = vec3(float(data.br) / 255.0, float(data.bg) / 255.0, float(data.bb) / 255.0);
+
+    vec2 uv0 = vec2(float(data0.tt) / 255.0, float(data0.ss) / 255.0);
+    vec2 uv1 = vec2(float(data1.tt) / 255.0, float(data1.ss) / 255.0);
+    vec2 uv2 = vec2(float(data2.tt) / 255.0, float(data2.ss) / 255.0);
+
+    vec2 uv = bary.x * uv1 + bary.y * uv2 + bary.z * uv0;
+
+    vec4 albedo = texture(sampler2D(textures[nonuniformEXT(data0.tex_id)], nn), uv);
+  
+
+    
 
 
-    payload.color = albedo * 0.2 + clamp(abs(dot(normal, normalize(vec3(0,1,0.5)))), 0.0, 0.1);// + sunlight * ndotl * albedo + sunlight * albedo * pow(clamp(dot(reflect(payload.rayDir, normal), sunDir), 0, 1), 30);
+    payload.color = albedo.rgb * albedo.a * 0.4 + clamp(abs(dot(normal, normalize(vec3(0,1,0.5)))), 0.0, 0.1);// + sunlight * ndotl * albedo + sunlight * albedo * pow(clamp(dot(reflect(payload.rayDir, normal), sunDir), 0, 1), 30);
 
 }
