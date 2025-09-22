@@ -203,6 +203,10 @@ static BlockData access_safe(const ChunkData *chunk, ChunkNeighbors &neighbours,
 }
 
 void chunk_mesh(const ChunkData* chunk, ChunkNeighbors& neighbours, std::vector<uint8_t>& g, size_t* num_verts, BlockTextureMapping& mapping) {
+    auto shouldAddFace = [&](ChunkData const* c, int x, int y, int z, BlockData currentBlock) {
+        return access_safe(c, neighbours, x, y, z) == BlockAir || (currentBlock != BlockWater && access_safe(c, neighbours, x, y, z) == BlockWater);
+    };
+
     *num_verts = 0;
     for (int section = 0; section < CUNK_CHUNK_SECTIONS_COUNT; section++)
     {
@@ -218,29 +222,29 @@ void chunk_mesh(const ChunkData* chunk, ChunkNeighbors& neighbours, std::vector<
                         color.x = block_colors[block_data].r;
                         color.y = block_colors[block_data].g;
                         color.z = block_colors[block_data].b;
-                        if (access_safe(chunk, neighbours, x, world_y + 1, z) == BlockAir) {
+                        if (shouldAddFace(chunk, x, world_y + 1, z, block_data)) {
                             paste_plus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), TOP));
                             *num_verts += 6;
                         }
-                        if (access_safe(chunk, neighbours, x, world_y - 1, z) == BlockAir) {
+                        if (shouldAddFace(chunk, x, world_y - 1, z, block_data)) {
                             paste_minus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), BOTTOM));
                             *num_verts += 6;
                         }
 
-                        if (access_safe(chunk, neighbours, x + 1, world_y, z) == BlockAir) {
+                        if (shouldAddFace(chunk, x + 1, world_y, z, block_data)) {
                             paste_plus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), EAST));
                             *num_verts += 6;
                         }
-                        if (access_safe(chunk, neighbours, x - 1, world_y, z) == BlockAir) {
+                        if (shouldAddFace(chunk, x - 1, world_y, z, block_data)) {
                             paste_minus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), WEST));
                             *num_verts += 6;
                         }
 
-                        if (access_safe(chunk, neighbours, x, world_y, z + 1) == BlockAir) {
+                        if (shouldAddFace(chunk, x, world_y, z + 1, block_data)) {
                             paste_plus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), SOUTH));
                             *num_verts += 6;
                         }
-                        if (access_safe(chunk, neighbours, x, world_y, z - 1) == BlockAir) {
+                        if (shouldAddFace(chunk, x, world_y, z - 1, block_data)) {
                             paste_minus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), NORTH));
                             *num_verts += 6;
                         }
