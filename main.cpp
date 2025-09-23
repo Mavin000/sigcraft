@@ -134,6 +134,7 @@ CameraInput camera_input;
 void camera_update(GLFWwindow *, CameraInput *input);
 
 bool reload_shaders = false;
+bool rebuildTLAS = true;
 std::unique_ptr<imr::Buffer> ubo;
 std::unique_ptr<imr::Image> storage_image;
 std::map<std::pair<int, int>, std::tuple<VkTransformMatrixKHR, imr::AccelerationStructure *, DescriptorPackage>> loadedChunkData;
@@ -461,6 +462,7 @@ int main(int argc, char **argv) {
     {
         fps_counter.tick();
         fps_counter.updateGlfwWindowTitle(window);
+        rebuildTLAS = false;
 
         uniformData.projInverse = invert_mat4(camera_get_proj_mat4(&camera, storage_image->size().width, storage_image->size().height));
         uniformData.viewInverse = invert_mat4(camera_get_pure_view_mat4(&camera));
@@ -527,7 +529,7 @@ int main(int argc, char **argv) {
 
                 if (loaded->mesh)
                     return;
-
+                rebuildTLAS = true;
                 bool all_neighbours_loaded = true;
                 ChunkNeighbors n = {};
                 for (int dx = -1; dx < 2; dx++) {
@@ -600,6 +602,7 @@ int main(int argc, char **argv) {
                         });
                     }
                     world.unload_chunk(chunk);
+                    rebuildTLAS = true;
                     
 
                     continue;
@@ -611,24 +614,24 @@ int main(int argc, char **argv) {
                 }
             }
 
-
-            instances.clear();
-            instances.reserve(loadedChunkData.size());
-            globalDescriptors.clear();
-            globalDescriptors.reserve(loadedChunkData.size());
-            for (auto& [_, val] : loadedChunkData) {
-                auto& [transform, blas, desc] = val;
-                instances.emplace_back(transform, blas);
-                globalDescriptors.emplace_back(desc);
-            }
+            if(rebuildTLAS){
+                instances.clear();
+                instances.reserve(loadedChunkData.size());
+                globalDescriptors.clear();
+                globalDescriptors.reserve(loadedChunkData.size());
+                for (auto& [_, val] : loadedChunkData) {
+                    auto& [transform, blas, desc] = val;
+                    instances.emplace_back(transform, blas);
+                    globalDescriptors.emplace_back(desc);
+                }
 
               
-            shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
-            shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
-            descriptorBuffer = std::make_unique<imr::Buffer>(*device, sizeof(DescriptorPackage) * globalDescriptors.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-            descriptorBuffer->uploadDataSync(0, sizeof(DescriptorPackage) * globalDescriptors.size(), globalDescriptors.data());
+                shaders->topLevelAS = std::make_unique<imr::AccelerationStructure>(*device);
+                shaders->topLevelAS->createTopLevelAccelerationStructure(instances);
+                descriptorBuffer = std::make_unique<imr::Buffer>(*device, sizeof(DescriptorPackage) * globalDescriptors.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+                descriptorBuffer->uploadDataSync(0, sizeof(DescriptorPackage) * globalDescriptors.size(), globalDescriptors.data());
 
-
+            }
 
             auto &image = context.image();
 

@@ -39,15 +39,9 @@ struct ChunkMesh
     {
         uint8_t tt;
         uint8_t ss;
-        uint8_t nnx, nny, nnz;
         uint8_t tex_id;
     };
 
-    struct FaceData
-    {
-       int8_t verts[3][3];
-
-    };
 };
 
 #endif

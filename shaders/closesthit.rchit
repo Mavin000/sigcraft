@@ -23,7 +23,6 @@ layout(binding = 2, set = 0) uniform Ubo
 struct Vertex {
     uint8_t tt;
     uint8_t ss;
-    uint8_t nnx; uint8_t nny; uint8_t nnz;
     uint8_t tex_id;
 };
 
@@ -86,12 +85,16 @@ void main()
     vec3 p1 = vbuf.positions[i1];
     vec3 p2 = vbuf.positions[i2];
 
+    vec3 p0p1 = p0-p1;
+    vec3 p1p2 = p1-p2;
+
+    vec3 normal = normalize(cross(p1p2, p0p1));
+
     vec3 bary = vec3(attribs.x, attribs.y, 1.0 - attribs.x - attribs.y);
 
     Vertex data0 = dataBuf.verticesData[i0];
     Vertex data1 = dataBuf.verticesData[i1];
     Vertex data2 = dataBuf.verticesData[i2];
-    vec3 normal = normalize(vec3(float(data0.nnx), float(data0.nny), float(data0.nnz)) / 255.0 * 2.0 - 1.0);
 
     vec3 objectPos = bary.x * p1 + bary.y * p2 + bary.z * p0;
     vec3 origin = objectPos + vec3(desc.chunkOffset) + normal * 0.001;

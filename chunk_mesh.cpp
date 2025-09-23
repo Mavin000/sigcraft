@@ -300,9 +300,6 @@ ChunkMesh::ChunkMesh(imr::Device& d, ChunkNeighbors& n, BlockTextureMapping& map
         uglyVertex uv;
         uv.tt = v.tt;
         uv.ss = v.ss;
-        uv.nnx = v.nnx;
-        uv.nny = v.nny;
-        uv.nnz = v.nnz;
         uv.tex_id = v.tex_id;
         g2[i] = uv;
     }
