@@ -298,18 +298,12 @@ ChunkMesh::ChunkMesh(imr::Device& d, ChunkNeighbors& n, BlockTextureMapping& map
     for (size_t i = 0; i < num_verts; i++) {
         const auto& v = verts[i];
         uglyVertex uv;
-        uv.vx = static_cast<int>(v.vx);
-        uv.vy = static_cast<int>(v.vy);
-        uv.vz = static_cast<int>(v.vz);
-        uv.tt = static_cast<uint>(v.tt);
-        uv.ss = static_cast<uint>(v.ss);
-        uv.nnx = static_cast<uint>(v.nnx);
-        uv.nny = static_cast<uint>(v.nny);
-        uv.nnz = static_cast<uint>(v.nnz);
-        uv.br = static_cast<uint>(v.br);
-        uv.bg = static_cast<uint>(v.bg);
-        uv.bb = static_cast<uint>(v.bb);
-        uv.tex_id = static_cast<uint>(v.tex_id);
+        uv.tt = v.tt;
+        uv.ss = v.ss;
+        uv.nnx = v.nnx;
+        uv.nny = v.nny;
+        uv.nnz = v.nnz;
+        uv.tex_id = v.tex_id;
         g2[i] = uv;
     }
 

@@ -3,6 +3,8 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_buffer_reference : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int8 :require
+#extension GL_EXT_shader_explicit_arithmetic_types_int16 :require
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
 
@@ -19,12 +21,10 @@ layout(binding = 2, set = 0) uniform Ubo
 } ubo;
 
 struct Vertex {
-    int vx; int vy; int vz;
-    uint tt;
-    uint ss;
-    uint nnx; uint nny; uint nnz;
-    uint br; uint bg; uint bb;
-    uint tex_id;
+    uint8_t tt;
+    uint8_t ss;
+    uint8_t nnx; uint8_t nny; uint8_t nnz;
+    uint8_t tex_id;
 };
 
 layout(buffer_reference, scalar) buffer VertexBuffer {
@@ -66,9 +66,6 @@ struct RayPayload {
 };
 
 layout(location = 0) rayPayloadInEXT RayPayload payload;
-
-
-
 
 
 
