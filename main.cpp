@@ -219,7 +219,7 @@ struct Shaders
 
         auto raygen = load_shader("raygen.rgen.spv", "main", VK_SHADER_STAGE_RAYGEN_BIT_KHR);
         auto hit = load_shader("closesthit.rchit.spv", "main", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
-        auto shadowhit = load_shader("shadowhit.rchit.spv", "main", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+        auto shadowhit = load_shader("shadowhit.rahit.spv", "main", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
         auto miss = load_shader("miss.rmiss.spv", "main", VK_SHADER_STAGE_MISS_BIT_KHR);
         auto shadowmiss = load_shader("shadowmiss.rmiss.spv", "main", VK_SHADER_STAGE_MISS_BIT_KHR);
 
@@ -228,7 +228,7 @@ struct Shaders
             .closest_hit = hit,
         });
         hits.push_back({
-            .closest_hit = shadowhit,
+            .any_hit = shadowhit,
         });
 
         std::vector<imr::ShaderEntryPoint*> misses;

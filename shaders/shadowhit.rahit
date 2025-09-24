@@ -5,4 +5,5 @@ layout(location = 1) rayPayloadInEXT bool shadowHitPayload;
 
 void main() {
     shadowHitPayload = true;
+    terminateRayEXT;
 }
