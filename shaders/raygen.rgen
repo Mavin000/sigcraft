@@ -12,10 +12,12 @@ layout(binding = 2, set = 0) uniform CameraProperties
 
 struct RayPayload {
 	bool isHit;
+	bool continueTrace;
 	vec3 color;
 	vec3 rayDir;
 	vec3 hitPos;
 	vec3 hitNormal;
+	vec3 throughput;
 };
 
 layout(location = 0) rayPayloadEXT RayPayload payload;
@@ -25,6 +27,7 @@ layout(location = 1) rayPayloadEXT bool shadowHitPayload;
 void main()
 {
 	payload.isHit = false;
+	payload.continueTrace = false;
 	const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
 	vec2 inUV = pixelCenter/vec2(gl_LaunchSizeEXT.xy);
 	vec2 d = inUV * 2.0 - 1.0;
@@ -40,6 +43,7 @@ void main()
 
 	payload.color = vec3(0.0);
 	payload.rayDir = direction.xyz;
+	payload.throughput = vec3(1.0);
 
 	traceRayEXT(
 		topLevelAS,
@@ -74,6 +78,20 @@ void main()
         sunDir, 10000.0,
         1
     );
+
+	if(payload.continueTrace) {
+		payload.continueTrace = false;
+		traceRayEXT(
+			topLevelAS,
+			gl_RayFlagsOpaqueEXT,
+			0xff,
+			0, 0, 0,
+			payload.hitPos - payload.hitNormal * 0.002, 0.001,
+			payload.rayDir, 10000.0,
+			0
+		);
+		payload.color *= payload.throughput;
+	}
 
     float sunlight = shadowHitPayload ? 0.0 : 1.0;
 

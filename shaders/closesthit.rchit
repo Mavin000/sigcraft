@@ -58,10 +58,12 @@ uniform texture2D textures[15];
 
 struct RayPayload {
     bool isHit;
+    bool continueTrace;
 	vec3 color;
 	vec3 rayDir;
     vec3 hitPos;
     vec3 hitNormal;
+    vec3 throughput;
 };
 
 layout(location = 0) rayPayloadInEXT RayPayload payload;
@@ -109,6 +111,13 @@ void main()
     vec2 uv = bary.x * uv1 + bary.y * uv2 + bary.z * uv0;
 
     vec4 albedo = texture(sampler2D(textures[nonuniformEXT(data0.tex_id)], nn), uv);
+
+    if (albedo.a < 0.9) {
+        vec3 atten = albedo.rgb * albedo.a;
+        payload.throughput *= atten;
+        payload.continueTrace = true;
+        return;
+    }
   
 
     

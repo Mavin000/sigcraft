@@ -7,10 +7,12 @@
 
 struct RayPayload {
 	bool isHit;
+    bool continueTrace;
 	vec3 color;
 	vec3 rayDir;
     vec3 hitPos;
     vec3 hitNormal;
+    vec3 throughput;
 };
 
 layout(location = 0) rayPayloadInEXT RayPayload payload;
