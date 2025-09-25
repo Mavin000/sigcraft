@@ -110,7 +110,13 @@ void main()
 
     vec2 uv = bary.x * uv1 + bary.y * uv2 + bary.z * uv0;
 
-    vec4 albedo = texture(sampler2D(textures[nonuniformEXT(data0.tex_id)], nn), uv);
+    vec4 albedo = texture(sampler2D(textures[nonuniformEXT(data0.tex_id % 128)], nn), uv);
+
+    if (data0.tex_id / 128 == 1){
+        albedo.g += 1.0 - albedo.a;
+        albedo.a = 1.0;
+        //albedo.rgb = vec3(1.0, 0.0, 1.0);
+    }
 
     //if (albedo.a < 0.9) {
     //    vec3 atten = albedo.rgb * albedo.a;

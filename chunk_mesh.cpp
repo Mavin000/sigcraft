@@ -82,7 +82,7 @@ v.bb = color.z * 255;            \
 v.tex_id = tid;           \
 add_vertex();
 
-static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
+static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, uint8_t tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -94,7 +94,7 @@ static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_X_FACE(V)
 }
 
-static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
+static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, uint8_t tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -106,7 +106,7 @@ static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigne
     PLUS_X_FACE(V)
 }
 
-static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
+static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, uint8_t tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -118,7 +118,7 @@ static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_Y_FACE(V)
 }
 
-static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
+static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, uint8_t tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -130,7 +130,7 @@ static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigne
     PLUS_Y_FACE(V)
 }
 
-static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
+static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, uint8_t tid) {
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -142,7 +142,7 @@ static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_Z_FACE(V)
 }
 
-static void paste_plus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, unsigned tid) {
+static void paste_plus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, uint8_t tid) {
     float tmp[5];
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
@@ -204,7 +204,7 @@ static BlockData access_safe(const ChunkData *chunk, ChunkNeighbors &neighbours,
 
 void chunk_mesh(const ChunkData* chunk, ChunkNeighbors& neighbours, std::vector<uint8_t>& g, size_t* num_verts, BlockTextureMapping& mapping) {
     auto shouldAddFace = [&](ChunkData const* c, int x, int y, int z, BlockData currentBlock) {
-        return access_safe(c, neighbours, x, y, z) == BlockAir || (currentBlock != BlockWater && access_safe(c, neighbours, x, y, z) == BlockWater);
+        return access_safe(c, neighbours, x, y, z) == BlockAir || (currentBlock != BlockWater && access_safe(c, neighbours, x, y, z) == BlockWater)|| (currentBlock != BlockLeaves && access_safe(c, neighbours, x, y, z) == BlockLeaves);
     };
 
     *num_verts = 0;
@@ -302,6 +302,9 @@ ChunkMesh::ChunkMesh(imr::Device& d, ChunkNeighbors& n, BlockTextureMapping& map
         uv.ss = v.ss;
         uv.tex_id = v.tex_id;
         g2[i] = uv;
+        // if(v.tex_id / 128 == 1){
+        //     printf("works%d\n", v.tex_id);
+        // }
     }
 
     vertexAttributesBuf = std::make_unique<imr::Buffer>(d, g2.size() * sizeof(uglyVertex),

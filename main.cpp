@@ -438,10 +438,10 @@ int main(int argc, char **argv) {
                 case BlockTallGrass:
                 case BlockGrass: {
                     if (face == TOP)
-                        return id_safe("grass_top");
+                        return 128 + id_safe("grass_top");
                     if (face == BOTTOM)
                         return id_safe("dirt");
-                    return id_safe("grass_side");
+                    return 128 + id_safe("grass_side");
                 }
                 case BlockSand: return id_safe("sand");
                 case BlockGravel: return id_safe("gravel");
