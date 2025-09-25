@@ -12,8 +12,8 @@ layout(binding = 2, set = 0) uniform CameraProperties
 
 struct RayPayload {
 	bool isHit;
-	bool continueTrace;
-	vec3 color;
+    float hitT;
+	vec4 color;
 	vec3 rayDir;
 	vec3 hitPos;
 	vec3 hitNormal;
@@ -27,7 +27,6 @@ layout(location = 1) rayPayloadEXT bool shadowHitPayload;
 void main()
 {
 	payload.isHit = false;
-	payload.continueTrace = false;
 	const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
 	vec2 inUV = pixelCenter/vec2(gl_LaunchSizeEXT.xy);
 	vec2 d = inUV * 2.0 - 1.0;
@@ -41,9 +40,13 @@ void main()
 	float tmax = 10000.0;
 
 
-	payload.color = vec3(0.0);
 	payload.rayDir = direction.xyz;
 	payload.throughput = vec3(1.0);
+
+	int MAX_RAY_DEPTH = 3;
+
+	vec3 lo = vec3(0.0);
+	vec3 atten = vec3(1.0);
 
 	traceRayEXT(
 		topLevelAS,
@@ -54,50 +57,51 @@ void main()
 		direction.xyz, tmax,
 		0
 	);
+	for (int i = 0; i < MAX_RAY_DEPTH; i++) {
 
+	
+		if (!payload.isHit) {
+			lo += atten * payload.color.rgb;
+			break;
+		}
+		float angle = cam.time * 2.0 * 3.14159265359;
+		vec3 sunDir = normalize(vec3(0.0, sin(angle), cos(angle)));
 
+		shadowHitPayload = false;
 
-	//
-	if (!payload.isHit) {
-		imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(payload.color, 0.0));
-		return;
-	}
-	float angle = cam.time * 2.0 * 3.14159265359;
-    vec3 sunDir = normalize(vec3(0.0, sin(angle), cos(angle)));
-
-    shadowHitPayload = false;
-
-    traceRayEXT(
-        topLevelAS,
-        gl_RayFlagsOpaqueEXT,
-        0xFF,
-        1,  
-        0,
-        1,
-        payload.hitPos, 0.001,
-        sunDir, 10000.0,
-        1
-    );
-
-	if(payload.continueTrace) {
-		payload.continueTrace = false;
 		traceRayEXT(
 			topLevelAS,
-			gl_RayFlagsOpaqueEXT,
-			0xff,
-			0, 0, 0,
-			payload.hitPos - payload.hitNormal * 0.002, 0.001,
-			payload.rayDir, 10000.0,
-			0
+			gl_RayFlagsNoOpaqueEXT,
+			0xFF,
+			1,  
+			0,
+			1,
+			payload.hitPos, 0.001,
+			sunDir, 10000.0,
+			1
 		);
-		payload.color *= payload.throughput;
+		float sunlight = shadowHitPayload ? 0.0 : 1.0;
+
+		float ndotl =clamp(dot(payload.hitNormal, sunDir),0.0,1.0);
+		lo.rgb += sunlight * ndotl * payload.color.rgb + payload.color.rgb * 0.3;
+
+		vec3 normal = dot(payload.hitNormal,payload.rayDir) > 0.0 ? payload.hitNormal : -payload.hitNormal;
+
+		if (payload.color.a < 1.0) {
+			traceRayEXT(
+				topLevelAS,
+				gl_RayFlagsOpaqueEXT,
+				0xff,
+				0, 0, 0,
+				payload.hitPos + normal * 0.002, 0.001,
+				normalize(payload.rayDir), 10000.0,
+				0
+			);
+			continue;
+		} else {
+			break;
+		}
 	}
 
-    float sunlight = shadowHitPayload ? 0.0 : 1.0;
-
-    float ndotl = dot(payload.hitNormal, sunDir);
-	payload.color +=  sunlight * ndotl * payload.color + sunlight * payload.color * pow(clamp(dot(reflect(payload.rayDir, payload.hitNormal), sunDir), 0, 1), 30);
-	//
-
-	imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(payload.color, 0.0));
+	imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(lo, 0.0));
 }

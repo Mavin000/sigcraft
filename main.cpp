@@ -219,7 +219,8 @@ struct Shaders
 
         auto raygen = load_shader("raygen.rgen.spv", "main", VK_SHADER_STAGE_RAYGEN_BIT_KHR);
         auto hit = load_shader("closesthit.rchit.spv", "main", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
-        auto shadowhit = load_shader("shadowhit.rahit.spv", "main", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+        auto shadowhit = load_shader("shadowhit.rchit.spv", "main", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+        auto shadowanyhit = load_shader("shadowanyhit.rahit.spv", "main", VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
         auto miss = load_shader("miss.rmiss.spv", "main", VK_SHADER_STAGE_MISS_BIT_KHR);
         auto shadowmiss = load_shader("shadowmiss.rmiss.spv", "main", VK_SHADER_STAGE_MISS_BIT_KHR);
 
@@ -228,7 +229,8 @@ struct Shaders
             .closest_hit = hit,
         });
         hits.push_back({
-            .any_hit = shadowhit,
+            .closest_hit = shadowhit,
+            .any_hit = shadowanyhit,
         });
 
         std::vector<imr::ShaderEntryPoint*> misses;
@@ -466,7 +468,8 @@ int main(int argc, char **argv) {
 
         uniformData.projInverse = invert_mat4(camera_get_proj_mat4(&camera, storage_image->size().width, storage_image->size().height));
         uniformData.viewInverse = invert_mat4(camera_get_pure_view_mat4(&camera));
-        uniformData.time = fmod((imr_get_time_nano()-startingTime) / 1e9, 60.0f) / 60.0f;
+        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
+            uniformData.time = fmod((imr_get_time_nano()-startingTime) / 1e9, 60.0f) / 60.0f;
         ubo->uploadDataSync(0, sizeof(uniformData), &uniformData);
 
         swapchain.renderFrameSimplified([&](imr::Swapchain::SimplifiedRenderContext &context) 

@@ -7,8 +7,9 @@
 
 struct RayPayload {
 	bool isHit;
-    bool continueTrace;
-	vec3 color;
+    //bool continueTrace;
+    float hitT;
+	vec4 color;
 	vec3 rayDir;
     vec3 hitPos;
     vec3 hitNormal;
@@ -47,10 +48,10 @@ void main()
 
 
     if (cosTheta > cos(emitterRadius)) {
-        payload.color = vec3(1.0, 0.95, 0.6) * 2.0;
+        payload.color.rgb = vec3(1.0, 0.95, 0.6) * 2.0;
     } else {
         float t = 0.5 * (payload.rayDir.y + 1.0);
-        payload.color = mix(vec3(0.2, 0.3, 0.8), vec3(0.6, 0.8, 1.0), t);
+        payload.color.rgb = mix(vec3(0.2, 0.3, 0.8), vec3(0.6, 0.8, 1.0), t);
     }
-    
+    payload.color.a = 1.0;
 }

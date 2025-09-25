@@ -57,8 +57,9 @@ uniform texture2D textures[15];
 
 struct RayPayload {
     bool isHit;
-    bool continueTrace;
-	vec3 color;
+    float hitT;
+    //bool continueTrace;
+	vec4 color;
 	vec3 rayDir;
     vec3 hitPos;
     vec3 hitNormal;
@@ -66,8 +67,6 @@ struct RayPayload {
 };
 
 layout(location = 0) rayPayloadInEXT RayPayload payload;
-
-
 
 void main()
 {
@@ -101,6 +100,8 @@ void main()
     vec3 origin = objectPos + vec3(desc.chunkOffset) + normal * 0.001;
 
     payload.hitPos = origin;
+
+
     payload.hitNormal = normal;
 
     vec2 uv0 = vec2(float(data0.tt) / 255.0, float(data0.ss) / 255.0);
@@ -111,17 +112,13 @@ void main()
 
     vec4 albedo = texture(sampler2D(textures[nonuniformEXT(data0.tex_id)], nn), uv);
 
-    if (albedo.a < 0.9) {
-        vec3 atten = albedo.rgb * albedo.a;
-        payload.throughput *= atten;
-        payload.continueTrace = true;
-        return;
-    }
+    //if (albedo.a < 0.9) {
+    //    vec3 atten = albedo.rgb * albedo.a;
+    //    payload.throughput *= atten;
+    //    payload.continueTrace = true;
+    //    return;
+    //}
   
-
-    
-
-
-    payload.color = albedo.rgb * albedo.a * 0.4 + clamp(abs(dot(normal, normalize(vec3(0,1,0.5)))), 0.0, 0.1);// + sunlight * ndotl * albedo + sunlight * albedo * pow(clamp(dot(reflect(payload.rayDir, normal), sunDir), 0, 1), 30);
-
+    payload.hitT = gl_HitTEXT;
+    payload.color = albedo; //.rgb * albedo.a * 0.4 + clamp(abs(dot(normal, normalize(vec3(0,1,0.5)))), 0.0, 0.1);// + sunlight * ndotl * albedo + sunlight * albedo * pow(clamp(dot(reflect(payload.rayDir, normal), sunDir), 0, 1), 30);
 }

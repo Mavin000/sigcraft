@@ -31,7 +31,10 @@ add_dependencies(sigcraft closesthit_spv)
 add_custom_target(miss_spv COMMAND ${GLSLANG_EXE} -V ${CMAKE_CURRENT_SOURCE_DIR}/shaders/miss.rmiss -o ${CMAKE_CURRENT_BINARY_DIR}/miss.rmiss.spv --target-env vulkan1.3)
 add_dependencies(sigcraft miss_spv)
 
-add_custom_target(shadowhit_spv COMMAND ${GLSLANG_EXE} -V ${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadowhit.rahit -o ${CMAKE_CURRENT_BINARY_DIR}/shadowhit.rahit.spv --target-env vulkan1.3)
+add_custom_target(shadowhit_spv COMMAND ${GLSLANG_EXE} -V ${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadowhit.rchit -o ${CMAKE_CURRENT_BINARY_DIR}/shadowhit.rchit.spv --target-env vulkan1.3)
 add_dependencies(sigcraft shadowhit_spv)
+add_custom_target(shadowanyhit_spv COMMAND ${GLSLANG_EXE} -V ${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadowanyhit.rahit -o ${CMAKE_CURRENT_BINARY_DIR}/shadowanyhit.rahit.spv --target-env vulkan1.3)
+add_dependencies(sigcraft shadowanyhit_spv)
+
 add_custom_target(shadowmiss_spv COMMAND ${GLSLANG_EXE} -V ${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadowmiss.rmiss -o ${CMAKE_CURRENT_BINARY_DIR}/shadowmiss.rmiss.spv --target-env vulkan1.3)
 add_dependencies(sigcraft shadowmiss_spv)

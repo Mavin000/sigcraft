@@ -72,6 +72,6 @@ void main() {
     if (albedo.a < 1.0) {
         ignoreIntersectionEXT;
     }
-    shadowHitPayload = true;
+    //shadowHitPayload = true;
     terminateRayEXT;
 }
