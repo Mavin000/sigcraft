@@ -1,9 +1,77 @@
 #version 460
 #extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_scalar_block_layout : require
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int8 : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+
+hitAttributeEXT vec2 attribs;
+
+struct Vertex {
+    uint8_t tt;
+    uint8_t ss;
+    uint8_t tex_id;
+};
+
+layout(buffer_reference, scalar) buffer VertexBuffer {
+    vec3 positions[];
+};
+
+layout(buffer_reference, scalar) buffer IndexBuffer {
+    uint indices[];
+};
+
+layout(buffer_reference, scalar) buffer VertexDataBuffer {
+    Vertex verticesData[];
+};
+
+struct ChunkRenderingData {
+    uint64_t vertexAddress;
+    uint64_t indexAddress;
+    uint64_t vertexDataAdress;
+    uint vertexOffset;
+    vec3 chunkOffset;
+};
+
+layout(scalar, set = 0, binding = 3) readonly buffer DescriptorBuffer {
+    ChunkRenderingData descriptors[];
+};
+
+layout(set = 0, binding = 4)
+uniform sampler nn;
+
+layout(set = 0, binding = 5)
+uniform texture2D textures[15];
 
 layout(location = 1) rayPayloadInEXT bool shadowHitPayload;
 
 void main() {
+
+    ChunkRenderingData desc = descriptors[gl_InstanceID];
+    IndexBuffer ibuf = IndexBuffer(desc.indexAddress);
+    VertexBuffer vbuf = VertexBuffer(desc.vertexAddress);
+    VertexDataBuffer dataBuf = VertexDataBuffer(desc.vertexDataAdress);
+
+    uint i0 = ibuf.indices[3 * gl_PrimitiveID + 0] + desc.vertexOffset;
+    uint i1 = ibuf.indices[3 * gl_PrimitiveID + 1] + desc.vertexOffset;
+    uint i2 = ibuf.indices[3 * gl_PrimitiveID + 2] + desc.vertexOffset;
+
+    Vertex data0 = dataBuf.verticesData[i0];
+    Vertex data1 = dataBuf.verticesData[i1];
+    Vertex data2 = dataBuf.verticesData[i2];
+
+    vec3 bary = vec3(attribs.x, attribs.y, 1.0 - attribs.x - attribs.y);
+
+    vec2 uv0 = vec2(float(data0.tt) / 255.0, float(data0.ss) / 255.0);
+    vec2 uv1 = vec2(float(data1.tt) / 255.0, float(data1.ss) / 255.0);
+    vec2 uv2 = vec2(float(data2.tt) / 255.0, float(data2.ss) / 255.0);
+    vec2 uv = bary.x * uv1 + bary.y * uv2 + bary.z * uv0;
+
+    vec4 albedo = texture(sampler2D(textures[nonuniformEXT(data0.tex_id)], nn), uv);
+    if (albedo.a < 1.0) {
+        ignoreIntersectionEXT;
+    }
     shadowHitPayload = true;
     terminateRayEXT;
 }
