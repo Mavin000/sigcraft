@@ -58,7 +58,6 @@ uniform texture2D textures[15];
 struct RayPayload {
     bool isHit;
     float hitT;
-    //bool continueTrace;
 	vec4 color;
 	vec3 rayDir;
     vec3 hitPos;
@@ -115,16 +114,9 @@ void main()
     if (data0.tex_id / 128 == 1){
         albedo.g += 1.0 - albedo.a;
         albedo.a = 1.0;
-        //albedo.rgb = vec3(1.0, 0.0, 1.0);
     }
 
-    //if (albedo.a < 0.9) {
-    //    vec3 atten = albedo.rgb * albedo.a;
-    //    payload.throughput *= atten;
-    //    payload.continueTrace = true;
-    //    return;
-    //}
-  
+ 
     payload.hitT = gl_HitTEXT;
-    payload.color = albedo; //.rgb * albedo.a * 0.4 + clamp(abs(dot(normal, normalize(vec3(0,1,0.5)))), 0.0, 0.1);// + sunlight * ndotl * albedo + sunlight * albedo * pow(clamp(dot(reflect(payload.rayDir, normal), sunDir), 0, 1), 30);
+    payload.color = albedo;
 }
