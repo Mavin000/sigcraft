@@ -87,7 +87,7 @@ void main()
 
 
 		float air = 1.0;
-		float water = 1.33 -0.3; // internal reflection looks really ugly with high IOR
+		float water = 1.33; // internal reflection looks really ugly with high IOR
 		float eta = dot(payload.rayDir, payload.hitNormal) < 0.0 ? (air / water) : (water / air);
 
 		vec3 newRayDir = refract(normalize(payload.rayDir), Tnormal, eta);
@@ -98,7 +98,7 @@ void main()
 
 
 
-		float ndotl =clamp(dot(payload.hitNormal, sunDir),0.0,1.0);
+		float ndotl = clamp(dot(payload.hitNormal, sunDir),0.0,1.0);
 		lo.rgb += (sunlight * ndotl * payload.color.rgb + payload.color.rgb * 0.2) * payload.color.a * atten;
 
 		
@@ -109,7 +109,7 @@ void main()
 				gl_RayFlagsOpaqueEXT,
 				0xff,
 				0, 0, 0,
-				payload.hitPos - Tnormal * 0.005, 0.001,
+				payload.hitPos, 0.1,
 				payload.rayDir, 10000.0,
 				0
 			);
