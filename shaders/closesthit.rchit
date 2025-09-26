@@ -23,6 +23,7 @@ struct Vertex {
     uint8_t tt;
     uint8_t ss;
     uint8_t tex_id;
+    uint8_t tex_info;
 };
 
 layout(buffer_reference, scalar) buffer VertexBuffer {

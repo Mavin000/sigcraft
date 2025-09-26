@@ -223,29 +223,29 @@ void chunk_mesh(const ChunkData* chunk, ChunkNeighbors& neighbours, std::vector<
                         color.y = block_colors[block_data].g;
                         color.z = block_colors[block_data].b;
                         if (shouldAddFace(chunk, x, world_y + 1, z, block_data)) {
-                            paste_plus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), TOP));
+                            paste_plus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), TOP).first);
                             *num_verts += 6;
                         }
                         if (shouldAddFace(chunk, x, world_y - 1, z, block_data)) {
-                            paste_minus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), BOTTOM));
+                            paste_minus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), BOTTOM).first);
                             *num_verts += 6;
                         }
 
                         if (shouldAddFace(chunk, x + 1, world_y, z, block_data)) {
-                            paste_plus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), EAST));
+                            paste_plus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), EAST).first);
                             *num_verts += 6;
                         }
                         if (shouldAddFace(chunk, x - 1, world_y, z, block_data)) {
-                            paste_minus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), WEST));
+                            paste_minus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), WEST).first);
                             *num_verts += 6;
                         }
 
                         if (shouldAddFace(chunk, x, world_y, z + 1, block_data)) {
-                            paste_plus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), SOUTH));
+                            paste_plus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), SOUTH).first);
                             *num_verts += 6;
                         }
                         if (shouldAddFace(chunk, x, world_y, z - 1, block_data)) {
-                            paste_minus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), NORTH));
+                            paste_minus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), NORTH).first);
                             *num_verts += 6;
                         }
                     }
@@ -301,6 +301,7 @@ ChunkMesh::ChunkMesh(imr::Device& d, ChunkNeighbors& n, BlockTextureMapping& map
         uv.tt = v.tt;
         uv.ss = v.ss;
         uv.tex_id = v.tex_id;
+        uv.tex_info = v.tex_info;
         g2[i] = uv;
         // if(v.tex_id / 128 == 1){
         //     printf("works%d\n", v.tex_id);

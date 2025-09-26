@@ -430,30 +430,30 @@ int main(int argc, char **argv) {
             return 0;
         }
 
-        unsigned int get_block_texture(BlockId id, BlockFace face) override {
+        std::pair<unsigned int, unsigned int> get_block_texture(BlockId id, BlockFace face) override {
             switch (id) {
                 case BlockAir:break;
-                case BlockStone: return id_safe("stone");
-                case BlockDirt: return id_safe("dirt");
+                case BlockStone: return {id_safe("stone"),0};
+                case BlockDirt: return {id_safe("dirt"),0};
                 case BlockTallGrass:
                 case BlockGrass: {
                     if (face == TOP)
-                        return 128 + id_safe("grass_top");
+                        return {id_safe("grass_top"),1};
                     if (face == BOTTOM)
-                        return id_safe("dirt");
-                    return 128 + id_safe("grass_side");
+                        return {id_safe("dirt"),0};
+                    return {id_safe("grass_side"),1};
                 }
-                case BlockSand: return id_safe("sand");
-                case BlockGravel: return id_safe("gravel");
-                case BlockPlanks: return id_safe("planks");
-                case BlockWater: return id_safe("water");
-                case BlockLeaves: return id_safe("leaves");
-                case BlockWood: return id_safe("wood");
-                case BlockSnow: return id_safe("snow");
-                case BlockLava: return id_safe("lava");
+                case BlockSand: return {id_safe("sand"),0};
+                case BlockGravel: return {id_safe("gravel"),0};
+                case BlockPlanks: return {id_safe("planks"),0};
+                case BlockWater: return {id_safe("water"),2};
+                case BlockLeaves: return {id_safe("leaves"),0};
+                case BlockWood: return {id_safe("wood"),0};
+                case BlockSnow: return {id_safe("snow"),0};
+                case BlockLava: return {id_safe("lava"),0};
                 case BlockUnknown:break;
             }
-            return id_safe("notex");
+            return {id_safe("notex"),0};
         }
 
         std::unordered_map<int, int> _cache;

@@ -10,7 +10,7 @@ struct ChunkNeighbors {
 };
 
 struct BlockTextureMapping {
-    virtual unsigned get_block_texture(BlockId, BlockFace) = 0;
+    virtual std::pair<unsigned int, unsigned int> get_block_texture(BlockId, BlockFace) = 0;
 };
 
 
@@ -29,7 +29,7 @@ struct ChunkMesh
         uint8_t tt;
         uint8_t ss;
         uint8_t nnx, nny, nnz;
-        uint8_t pad;
+        uint8_t tex_info;
         uint8_t br, bg, bb, tex_id;
     };
 
@@ -40,6 +40,7 @@ struct ChunkMesh
         uint8_t tt;
         uint8_t ss;
         uint8_t tex_id;
+        uint8_t tex_info;
     };
 
 };
