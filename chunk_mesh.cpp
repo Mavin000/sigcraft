@@ -80,9 +80,11 @@ v.br = color.x * 255;            \
 v.bg = color.y * 255;            \
 v.bb = color.z * 255;            \
 v.tex_id = tid;           \
+v.tex_info = tex_info;       \
 add_vertex();
 
-static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, uint8_t tid) {
+static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
+    auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -94,7 +96,8 @@ static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_X_FACE(V)
 }
 
-static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, uint8_t tid) {
+static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
+    auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -106,7 +109,8 @@ static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigne
     PLUS_X_FACE(V)
 }
 
-static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, uint8_t tid) {
+static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
+    auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -118,7 +122,8 @@ static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_Y_FACE(V)
 }
 
-static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, uint8_t tid) {
+static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
+    auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -130,7 +135,8 @@ static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigne
     PLUS_Y_FACE(V)
 }
 
-static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, uint8_t tid) {
+static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
+    auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
     {
@@ -142,7 +148,8 @@ static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_Z_FACE(V)
 }
 
-static void paste_plus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, uint8_t tid) {
+static void paste_plus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
+    auto [tid, tex_info] = tex;
     float tmp[5];
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
@@ -223,29 +230,29 @@ void chunk_mesh(const ChunkData* chunk, ChunkNeighbors& neighbours, std::vector<
                         color.y = block_colors[block_data].g;
                         color.z = block_colors[block_data].b;
                         if (shouldAddFace(chunk, x, world_y + 1, z, block_data)) {
-                            paste_plus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), TOP).first);
+                            paste_plus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), TOP));
                             *num_verts += 6;
                         }
                         if (shouldAddFace(chunk, x, world_y - 1, z, block_data)) {
-                            paste_minus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), BOTTOM).first);
+                            paste_minus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), BOTTOM));
                             *num_verts += 6;
                         }
 
                         if (shouldAddFace(chunk, x + 1, world_y, z, block_data)) {
-                            paste_plus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), EAST).first);
+                            paste_plus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), EAST));
                             *num_verts += 6;
                         }
                         if (shouldAddFace(chunk, x - 1, world_y, z, block_data)) {
-                            paste_minus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), WEST).first);
+                            paste_minus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), WEST));
                             *num_verts += 6;
                         }
 
                         if (shouldAddFace(chunk, x, world_y, z + 1, block_data)) {
-                            paste_plus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), SOUTH).first);
+                            paste_plus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), SOUTH));
                             *num_verts += 6;
                         }
                         if (shouldAddFace(chunk, x, world_y, z - 1, block_data)) {
-                            paste_minus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), NORTH).first);
+                            paste_minus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), NORTH));
                             *num_verts += 6;
                         }
                     }
@@ -303,9 +310,7 @@ ChunkMesh::ChunkMesh(imr::Device& d, ChunkNeighbors& n, BlockTextureMapping& map
         uv.tex_id = v.tex_id;
         uv.tex_info = v.tex_info;
         g2[i] = uv;
-        // if(v.tex_id / 128 == 1){
-        //     printf("works%d\n", v.tex_id);
-        // }
+
     }
 
     vertexAttributesBuf = std::make_unique<imr::Buffer>(d, g2.size() * sizeof(uglyVertex),

@@ -430,7 +430,7 @@ int main(int argc, char **argv) {
             return 0;
         }
 
-        std::pair<unsigned int, unsigned int> get_block_texture(BlockId id, BlockFace face) override {
+        std::pair<uint8_t, uint8_t> get_block_texture(BlockId id, BlockFace face) override {
             switch (id) {
                 case BlockAir:break;
                 case BlockStone: return {id_safe("stone"),0};

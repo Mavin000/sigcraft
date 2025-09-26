@@ -12,7 +12,7 @@ struct Vertex {
     uint8_t tt;
     uint8_t ss;
     uint8_t tex_id;
-    uint8_t texture_info;
+    uint8_t tex_info;
 };
 
 layout(buffer_reference, scalar) buffer VertexBuffer {
@@ -70,7 +70,7 @@ void main() {
     vec2 uv = bary.x * uv1 + bary.y * uv2 + bary.z * uv0;
 
     vec4 albedo = texture(sampler2D(textures[nonuniformEXT(data0.tex_id)], nn), uv);
-    if (albedo.a < 1.0 && data0.tex_id / 128 == 0) {
+    if (albedo.a < 1.0 && (data0.tex_info & 1) == 0) {
         ignoreIntersectionEXT;
     }
     //shadowHitPayload = true;

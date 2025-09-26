@@ -10,7 +10,7 @@ struct ChunkNeighbors {
 };
 
 struct BlockTextureMapping {
-    virtual std::pair<unsigned int, unsigned int> get_block_texture(BlockId, BlockFace) = 0;
+    virtual std::pair<uint8_t, uint8_t> get_block_texture(BlockId, BlockFace) = 0;
 };
 
 
