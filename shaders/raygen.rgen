@@ -46,7 +46,7 @@ void main()
 	int MAX_RAY_DEPTH = 3;
 
 	vec3 lo = vec3(0.0);
-	vec3 atten = vec3(1.0);
+	float atten = 1.0;
 
 	traceRayEXT(
 		topLevelAS,
@@ -64,6 +64,7 @@ void main()
 			lo += atten * payload.color.rgb;
 			break;
 		}
+		atten *= payload.color.a;
 		float angle = cam.time * 2.0 * 3.14159265359;
 		vec3 sunDir = normalize(vec3(0.0, sin(angle), cos(angle)));
 
@@ -83,7 +84,7 @@ void main()
 		float sunlight = shadowHitPayload ? 0.0 : 1.0;
 
 		float ndotl =clamp(dot(payload.hitNormal, sunDir),0.0,1.0);
-		lo.rgb += sunlight * ndotl * payload.color.rgb + payload.color.rgb * 0.3;
+		lo.rgb += (sunlight * ndotl * payload.color.rgb + payload.color.rgb * 0.2) * payload.color.a * atten;
 
 		vec3 normal = dot(payload.hitNormal,payload.rayDir) > 0.0 ? payload.hitNormal : -payload.hitNormal;
 
