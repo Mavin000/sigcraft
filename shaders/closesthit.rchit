@@ -117,6 +117,20 @@ void main()
         albedo.a = 1.0;
     }
 
+    if ((data0.tex_info & 2) != 0){
+    	vec3 Tnormal = dot(payload.hitNormal,payload.rayDir) > 0.0 ? -payload.hitNormal : payload.hitNormal;
+
+
+		float air = 1.0;
+		float water = 1.33 - 0.2; // internal reflection looks really ugly with high IOR
+		float eta = dot(payload.rayDir, payload.hitNormal) < 0.0 ? (air / water) : (water / air);
+
+		vec3 newRayDir = refract(normalize(payload.rayDir), Tnormal, eta);
+		if (dot(newRayDir, newRayDir) < 1e-6) {
+			newRayDir = reflect(normalize(payload.rayDir), Tnormal);
+		}
+		payload.rayDir = normalize(newRayDir);       
+    }
  
     payload.hitT = gl_HitTEXT;
     payload.color = albedo;
