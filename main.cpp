@@ -218,6 +218,7 @@ struct Shaders
         };
 
         auto raygen = load_shader("raygen.rgen.spv", "main", VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+        auto anyhit = load_shader("rayanyhit.rahit.spv", "main", VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
         auto hit = load_shader("closesthit.rchit.spv", "main", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
         auto shadowhit = load_shader("shadowhit.rchit.spv", "main", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
         auto shadowanyhit = load_shader("shadowanyhit.rahit.spv", "main", VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
@@ -227,6 +228,7 @@ struct Shaders
         std::vector<imr::RayTracingPipeline::HitShadersTriple> hits;
         hits.push_back({
             .closest_hit = hit,
+            .any_hit = anyhit,
         });
         hits.push_back({
             .closest_hit = shadowhit,
