@@ -64,7 +64,7 @@ void main()
 			lo += atten * payload.color.rgb;
 			break;
 		}
-		atten *= payload.color.a;
+		
 		float angle = cam.time * 2.0 * 3.14159265359;
 		vec3 sunDir = normalize(vec3(0.0, sin(angle), cos(angle)));
 
@@ -106,7 +106,9 @@ void main()
 		} else {
 			break;
 		}
+		atten *= (1.0f - payload.color.a);
 	}
+
 
 	imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(lo, 0.0));
 }
