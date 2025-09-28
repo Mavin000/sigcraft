@@ -98,7 +98,7 @@ void main()
 				gl_RayFlagsOpaqueEXT,
 				0xff,
 				0, 0, 0,
-				payload.hitPos, 0.1,
+				payload.hitPos, 0.05,
 				payload.rayDir, 10000.0,
 				0
 			);
