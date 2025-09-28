@@ -13,6 +13,9 @@
 using namespace nasl;
 
 
+
+
+
 struct DescriptorPackage{
     VkDeviceAddress vertexAddress;
     VkDeviceAddress indexAddress;
@@ -354,6 +357,15 @@ struct Textures {
     std::unordered_map<std::string, int> block_textures_map;
 };
 
+int framebufferWidth = 1024;
+int framebufferHeight = 1024;
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    framebufferWidth = width;
+    framebufferHeight = height;
+}
+
 int main(int argc, char **argv) {
 
     auto startingTime = imr_get_time_nano();
@@ -361,6 +373,8 @@ int main(int argc, char **argv) {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     auto window = glfwCreateWindow(1024, 1024, "Example", nullptr, nullptr);
+
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     if (argc < 2)
         return 0;
@@ -468,7 +482,7 @@ int main(int argc, char **argv) {
         fps_counter.updateGlfwWindowTitle(window);
         rebuildTLAS = false;
 
-        uniformData.projInverse = invert_mat4(camera_get_proj_mat4(&camera, storage_image->size().width, storage_image->size().height));
+        uniformData.projInverse = invert_mat4(camera_get_proj_mat4(&camera, framebufferWidth, framebufferHeight));
         uniformData.viewInverse = invert_mat4(camera_get_pure_view_mat4(&camera));
         if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
             uniformData.time = fmod((imr_get_time_nano()-startingTime) / 1e9, 60.0f) / 60.0f;
