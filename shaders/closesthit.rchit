@@ -54,7 +54,7 @@ layout(set = 0, binding = 4)
 uniform sampler nn;
 
 layout(set = 0, binding = 5)
-uniform texture2D textures[15];
+uniform texture2D textures[18];
 
 struct RayPayload {
     bool isHit;

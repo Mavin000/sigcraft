@@ -460,13 +460,20 @@ int main(int argc, char **argv) {
                     return {id_safe("grass_side"),1};
                 }
                 case BlockSand: return {id_safe("sand"),0};
+                case BlockSandStone: {
+                    if (face == TOP )
+                        return {id_safe("sandstone_top"),0};
+                    if (face == BOTTOM)
+                        return {id_safe("sandstone_bottom"),0};
+                    return {id_safe("sandstone"),0};
+                }
                 case BlockGravel: return {id_safe("gravel"),0};
                 case BlockPlanks: return {id_safe("planks"),0};
                 case BlockWater: return {id_safe("water"),2};
                 case BlockLeaves: return {id_safe("leaves"),0};
                 case BlockWood: return {id_safe("wood"),0};
                 case BlockSnow: return {id_safe("snow"),0};
-                case BlockLava: return {id_safe("lava"),0};
+                case BlockLava: return {id_safe("lava"),0};\
                 case BlockUnknown:break;
             }
             return {id_safe("notex"),0};
