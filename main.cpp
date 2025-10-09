@@ -24,92 +24,6 @@ struct DescriptorPackage{
     vec3 chunkOffset;
 };
 
-// test anything
-
-struct Face
-{
-    vec3 v0, v1, v2, v3;
-};
-
-struct Tri
-{
-    uint32_t i0, i1, i2;
-};
-
-struct Cube
-{
-    Face faces[6];
-    Tri tris[6][2];
-};
-
-Cube make_cube()
-{
-    /*
-     *  +Y
-     *  ^
-     *  |
-     *  |
-     *  D------C.
-     *  |\     |\
-     *  | H----+-G
-     *  | |    | |
-     *  A-+----B | ---> +X
-     *   \|     \|
-     *    E------F
-     *     \
-     *      \
-     *       \
-     *        v +Z
-     *
-     * Adapted from
-     * https://www.asciiart.eu/art-and-design/geometries
-     */
-    vec3 A = {0, 0, 0};
-    vec3 B = {1, 0, 0};
-    vec3 C = {1, 1, 0};
-    vec3 D = {0, 1, 0};
-    vec3 E = {0, 0, 1};
-    vec3 F = {1, 0, 1};
-    vec3 G = {1, 1, 1};
-    vec3 H = {0, 1, 1};
-
-    int i = 0;
-    Cube cube = {};
-
-    auto add_face = [&](vec3 v0, vec3 v1, vec3 v2, vec3 v3, vec3 color)
-    {
-        cube.faces[i] = {v0, v1, v2, v3};
-        /*
-         * v0 --- v3
-         *  |   / |
-         *  |  /  |
-         *  | /   |
-         * v1 --- v2
-         */
-        uint32_t bi = i * 4;
-        cube.tris[i][0] = {bi + 0, bi + 1, bi + 3};
-        cube.tris[i][1] = {bi + 1, bi + 2, bi + 3};
-        i++;
-    };
-
-    // top face
-    add_face(H, D, C, G, vec3(0, 1, 0));
-    // north face
-    add_face(A, B, C, D, vec3(1, 0, 0));
-    // west face
-    add_face(A, D, H, E, vec3(0, 0, 1));
-    // east face
-    add_face(F, G, C, B, vec3(1, 0, 1));
-    // south face
-    add_face(E, H, G, F, vec3(0, 1, 1));
-    // bottom face
-    add_face(E, F, B, A, vec3(1, 1, 0));
-    assert(i == 6);
-    return cube;
-}
-
-// Test anything
-
 uint16_t width = 1024;
 uint16_t height = 1024;
 
@@ -158,41 +72,14 @@ struct Shaders
     std::unique_ptr<imr::Buffer> vertexBuffer;
     std::unique_ptr<imr::Buffer> indexBuffer;
     uint32_t indexCount;
-    Cube cube;
     vec3 red = {1, 0, 0};
     std::vector<imr::AccelerationStructure::TriangleGeometry> geometries;
 
     Shaders(imr::Device &d, imr::Swapchain &swapchain)
     {
-        // test
-        cube = make_cube();
-
-
-        indexCount = static_cast<uint32_t>(0);
-        // TODO add vertices and points
-        vertexBuffer = std::make_unique<imr::Buffer>(d, sizeof(cube.faces),
-                                                     VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-                                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &cube.faces);
-
-        indexBuffer = std::make_unique<imr::Buffer>(d, sizeof(cube.tris),
-                                                    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-                                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &cube.tris);
-        
 
 
         bottomLevelAS = std::make_unique<imr::AccelerationStructure>(d);
-        for (int i = 0; i < 6; i++)
-        {
-            // Setup identity transform matrix
-            VkTransformMatrixKHR transformMatrix = {
-                1.0f, 0.0f, 0.0f, 0.0f,
-                0.0f, 1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 1.0f, 0.0f,
-            };
-            geometries.push_back({vertexBuffer->device_address(), indexBuffer->device_address() + i * sizeof(cube.tris[i]), 24, 2, transformMatrix});
-        }
-
-        bottomLevelAS->createBottomLevelAccelerationStructure(geometries);
         topLevelAS = std::make_unique<imr::AccelerationStructure>(d);
 
         VkTransformMatrixKHR transformMatrix = {
@@ -200,16 +87,6 @@ struct Shaders
             0.0f, 0.001f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.001f, 0.0f,
         };
-        instances.emplace_back(transformMatrix, &*bottomLevelAS);
-        loadedChunkData[{10000, 10000}] = {transformMatrix, &*bottomLevelAS, {
-            vertexBuffer->device_address(),
-            indexBuffer->device_address(),
-            vertexBuffer->device_address(),//WRONG
-            0,
-            vec3(1, 1, 1)
-        }};
-
-        topLevelAS->createTopLevelAccelerationStructure(instances);
 
         std::vector<std::unique_ptr<imr::ShaderModule>> shader_modules;
         std::vector<std::unique_ptr<imr::ShaderEntryPoint>> entry_pts;
@@ -640,7 +517,7 @@ int main(int argc, char **argv) {
                 }
             }
 
-            if(rebuildTLAS){
+            if(rebuildTLAS && !loadedChunkData.empty()) {
                 instances.clear();
                 instances.reserve(loadedChunkData.size());
                 globalDescriptors.clear();
