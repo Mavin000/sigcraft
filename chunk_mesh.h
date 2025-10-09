@@ -25,7 +25,7 @@ struct ChunkMesh
 
     struct Vertex
     {
-        int16_t vx, vy, vz;
+        float vx, vy, vz;
         uint8_t tt;
         uint8_t ss;
         uint8_t nnx, nny, nnz;
@@ -33,8 +33,7 @@ struct ChunkMesh
         uint8_t br, bg, bb, tex_id;
     };
 
-    static_assert(sizeof(Vertex) == sizeof(uint8_t) * 16);
-
+    
     struct uglyVertex
     {
         uint8_t tt;

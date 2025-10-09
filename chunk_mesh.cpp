@@ -75,12 +75,12 @@ V(0, 1, 0, 0, 1, 0, 1, 0) \
 V(1, 1, 1, 1, 0, 0, 1, 0)
 
 #define PLUS_Y_FACE_CARPET(V) \
-V(1, 2, 1, 1, 0, 0, 1, 0) \
-V(0, 2, 0, 0, 1, 0, 1, 0) \
-V(1, 2, 0, 1, 1, 0, 1, 0) \
-V(1, 2, 1, 1, 0, 0, 1, 0) \
-V(0, 2, 1, 0, 0, 0, 1, 0) \
-V(0, 2, 0, 0, 1, 0, 1, 0)
+V(1, 0.8, 1, 1, 0, 0, 1, 0) \
+V(0, 0.8, 0, 0, 1, 0, 1, 0) \
+V(1, 0.8, 0, 1, 1, 0, 1, 0) \
+V(1, 0.8, 1, 1, 0, 0, 1, 0) \
+V(0, 0.8, 1, 0, 0, 0, 1, 0) \
+V(0, 0.8, 0, 0, 1, 0, 1, 0)
 
 
 
@@ -104,19 +104,19 @@ V(0, 2, 0, 0, 1, 0, 1, 0)
 
 // #define V(cx, cy, cz, t, s, nx, ny, nz) tmp[0] = (int) ((cx + 1) / 2) + (float) x; tmp[1] = (int) ((cy + 1) / 2) + (float) y; tmp[2] = (int) ((cz + 1) / 2) + (float) z; tmp[3] = t; tmp[4] = s; g.push_back(tmp[0]); g.push_back(tmp[1]); g.push_back(tmp[2]); g.push_back(tmp[3]); g.push_back(tmp[4]);
 #define V(cx, cy, cz, t, s, nx, ny, nz) \
-v.vx = cx + x;             \
-v.vy = cy + y;             \
-v.vz = cz + z;             \
-v.tt = t * 255;             \
-v.ss = s * 255;             \
-v.nnx = nx * 127 + 128;            \
-v.nny = ny * 127 + 128;            \
-v.nnz = nz * 127 + 128;            \
-v.br = color.x * 255;            \
-v.bg = color.y * 255;            \
-v.bb = color.z * 255;            \
-v.tex_id = tid;           \
-v.tex_info = tex_info;       \
+v.vx = static_cast<float>(cx + x); \
+v.vy = static_cast<float>(cy + y); \
+v.vz = static_cast<float>(cz + z); \
+v.tt = static_cast<uint8_t>(t * 255); \
+v.ss = static_cast<uint8_t>(s * 255); \
+v.nnx = static_cast<uint8_t>(nx * 127 + 128); \
+v.nny = static_cast<uint8_t>(ny * 127 + 128); \
+v.nnz = static_cast<uint8_t>(nz * 127 + 128); \
+v.br = static_cast<uint8_t>(color.x * 255); \
+v.bg = static_cast<uint8_t>(color.y * 255); \
+v.bb = static_cast<uint8_t>(color.z * 255); \
+v.tex_id = tid; \
+v.tex_info = tex_info; \
 add_vertex();
 
 static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
@@ -308,11 +308,9 @@ ChunkMesh::ChunkMesh(imr::Device& d, ChunkNeighbors& n, BlockTextureMapping& map
 
     auto verts = reinterpret_cast<const ChunkMesh::Vertex*>(g.data());
     for (size_t i = 0; i < num_verts; i++) {
-        const auto& v = verts[i];
-        vertexPositions.push_back(static_cast<float>(v.vx));
-        vertexPositions.push_back(static_cast<float>(v.vy));
-        vertexPositions.push_back(static_cast<float>(v.vz));
-
+        vertexPositions.push_back(verts[i].vx);
+        vertexPositions.push_back(verts[i].vy);
+        vertexPositions.push_back(verts[i].vz);
     }
 
     size_t vertexBufferSize = vertexPositions.size() * sizeof(float);
