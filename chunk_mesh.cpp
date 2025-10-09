@@ -34,6 +34,14 @@ V(0, 1, 0, 1, 1, 0, 0, -1) \
 V(0, 0, 0, 1, 0, 0, 0, -1) \
 V(1, 1, 0, 0, 1, 0, 0, -1)
 
+#define MINUS_Z_FACE_CARPET(V) \
+V(1, 0.3, 0, 0, 1, 0, 0, -1) \
+V(0, 0, 0, 1, 0, 0, 0, -1) \
+V(1, 0, 0, 0, 0, 0, 0, -1) \
+V(0, 0.3, 0, 1, 1, 0, 0, -1) \
+V(0, 0, 0, 1, 0, 0, 0, -1) \
+V(1, 0.3, 0, 0, 1, 0, 0, -1)
+
 #define PLUS_Z_FACE(V) \
 V(1, 0, 1, 1, 0, 0, 0, 1) \
 V(0, 0, 1, 0, 0, 0, 0, 1) \
@@ -41,6 +49,14 @@ V(1, 1, 1, 1, 1, 0, 0, 1) \
 V(1, 1, 1, 1, 1, 0, 0, 1) \
 V(0, 0, 1, 0, 0, 0, 0, 1) \
 V(0, 1, 1, 0, 1, 0, 0, 1)
+
+#define PLUS_Z_FACE_CARPET(V) \
+V(1, 0, 1, 1, 0, 0, 0, 1) \
+V(0, 0, 1, 0, 0, 0, 0, 1) \
+V(1, 0.3, 1, 1, 1, 0, 0, 1) \
+V(1, 0.3, 1, 1, 1, 0, 0, 1) \
+V(0, 0, 1, 0, 0, 0, 0, 1) \
+V(0, 0.3, 1, 0, 1, 0, 0, 1)
 
 #define MINUS_Y_FACE(V) \
 V(0, 0, 0, 0, 0, 0, -1, 0) \
@@ -58,6 +74,17 @@ V(0, 1, 1, 0, 0, 0, 1, 0) \
 V(0, 1, 0, 0, 1, 0, 1, 0) \
 V(1, 1, 1, 1, 0, 0, 1, 0)
 
+#define PLUS_Y_FACE_CARPET(V) \
+V(1, 2, 1, 1, 0, 0, 1, 0) \
+V(0, 2, 0, 0, 1, 0, 1, 0) \
+V(1, 2, 0, 1, 1, 0, 1, 0) \
+V(1, 2, 1, 1, 0, 0, 1, 0) \
+V(0, 2, 1, 0, 0, 0, 1, 0) \
+V(0, 2, 0, 0, 1, 0, 1, 0)
+
+
+
+
 #define CUBE(V)     \
     MINUS_X_FACE(V) \
     PLUS_X_FACE(V)  \
@@ -65,6 +92,15 @@ V(1, 1, 1, 1, 0, 0, 1, 0)
     PLUS_Z_FACE(V)  \
     MINUS_Y_FACE(V) \
     PLUS_Y_FACE(V)
+
+
+#define CARPET(V) \
+    MINUS_Y_FACE(V) \
+    PLUS_Y_FACE_CARPET(V) \
+    MINUS_Z_FACE_CARPET(V) \
+    PLUS_Z_FACE_CARPET(V) \
+    //MINUS_X_FACE_CARPET(V) \
+    //PLUS_X_FACE_CARPET(V)
 
 // #define V(cx, cy, cz, t, s, nx, ny, nz) tmp[0] = (int) ((cx + 1) / 2) + (float) x; tmp[1] = (int) ((cy + 1) / 2) + (float) y; tmp[2] = (int) ((cz + 1) / 2) + (float) z; tmp[3] = t; tmp[4] = s; g.push_back(tmp[0]); g.push_back(tmp[1]); g.push_back(tmp[2]); g.push_back(tmp[3]); g.push_back(tmp[4]);
 #define V(cx, cy, cz, t, s, nx, ny, nz) \
@@ -132,7 +168,7 @@ static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigne
         for (auto b : tmp)
             g.push_back(b);
     };
-    PLUS_Y_FACE(V)
+    PLUS_Y_FACE_CARPET(V)
 }
 
 static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
