@@ -119,7 +119,7 @@ v.tex_id = tid; \
 v.tex_info = tex_info; \
 add_vertex();
 
-static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
+static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex) {
     auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
@@ -132,7 +132,7 @@ static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_X_FACE(V)
 }
 
-static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
+static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex) {
     auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
@@ -145,7 +145,7 @@ static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigne
     PLUS_X_FACE(V)
 }
 
-static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
+static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex) {
     auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
@@ -158,7 +158,7 @@ static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_Y_FACE(V)
 }
 
-static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
+static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex) {
     auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
@@ -168,10 +168,11 @@ static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigne
         for (auto b : tmp)
             g.push_back(b);
     };
-    PLUS_Y_FACE_CARPET(V)
+    //PLUS_Y_FACE_CARPET(V)
+    PLUS_Y_FACE(V)
 }
 
-static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
+static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex) {
     auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
@@ -184,7 +185,7 @@ static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_Z_FACE(V)
 }
 
-static void paste_plus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint8_t, uint8_t> tex) {
+static void paste_plus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex) {
     auto [tid, tex_info] = tex;
     float tmp[5];
     ChunkMesh::Vertex v;

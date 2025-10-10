@@ -135,8 +135,8 @@ struct Textures {
         const char* loc = imr_get_executable_location();
         std::filesystem::path path = std::filesystem::path(loc).parent_path();
         while (true) {
-            if (std::filesystem::exists(path.string() + "/textures"))
-                return std::filesystem::path(path.string() + "/textures");
+            if (std::filesystem::exists(path.string() + "/assets/minecraft/textures"))
+                return std::filesystem::path(path.string() + "/assets/minecraft/textures");
             auto parent = path.parent_path();
             if (parent == path) {
                 throw std::runtime_error("failed to find path");
@@ -148,19 +148,23 @@ struct Textures {
 
     void load_all_textures() {
         auto textures_path = find_textures_path();
-        auto block_textures_path = std::filesystem::path(textures_path.string() + "/blocks");
-        for (auto file : std::filesystem::directory_iterator(block_textures_path)) {
-            if (file.is_regular_file() && file.path().string().ends_with(".png")) {
-                auto texture_name = file.path().filename().string();
+        auto block_textures_path = std::filesystem::path(textures_path.string() + "/block");
+        size_t i = 0;
+for (auto& file : std::filesystem::directory_iterator(block_textures_path)) {
+    if (file.is_regular_file() && file.path().extension() == ".png") {
+        auto texture_name = file.path().stem().string();
+        printf("[%zu] Loading block texture: %s\n", i, texture_name.c_str());
                 texture_name = texture_name.substr(0, texture_name.size() - 4);
                 printf("Loading block texture: %s\n", texture_name.c_str());
 
                 std::unique_ptr<imr::Image> texture;
                 load_texture(file.path(), texture);
                 block_textures_map[texture_name] = block_textures.size();
-                block_textures.emplace_back(std::move(texture));
+        block_textures.emplace_back(std::move(texture));
+        i++;
             }
         }
+        printf("Loaded %zu block textures\n", block_textures.size());
     }
 
     void load_texture(std::filesystem::path path, std::unique_ptr<imr::Image>& dst) {
@@ -318,12 +322,16 @@ int main(int argc, char **argv) {
 
         unsigned int id_safe(std::string texture_name) {
             auto found = _textures.block_textures_map.find(texture_name);
-            if (found != _textures.block_textures_map.end())
+            //printf("Looking for texture '%s'\n", texture_name.c_str());
+            
+            if (found != _textures.block_textures_map.end()){
+                printf("Found texture '%s' with id %d\n", texture_name.c_str(), found->second);
                 return found->second;
+                }
             return 0;
         }
 
-        std::pair<uint8_t, uint8_t> get_block_texture(BlockId id, BlockFace face) override {
+        std::pair<uint16_t, uint8_t> get_block_texture(BlockId id, BlockFace face) override {
             switch (id) {
                 case BlockAir:break;
                 case BlockStone: return {id_safe("stone"),0};
