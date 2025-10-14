@@ -150,18 +150,18 @@ struct Textures {
         auto textures_path = find_textures_path();
         auto block_textures_path = std::filesystem::path(textures_path.string() + "/block");
         size_t i = 0;
-for (auto& file : std::filesystem::directory_iterator(block_textures_path)) {
-    if (file.is_regular_file() && file.path().extension() == ".png") {
-        auto texture_name = file.path().stem().string();
-        printf("[%zu] Loading block texture: %s\n", i, texture_name.c_str());
-                texture_name = texture_name.substr(0, texture_name.size() - 4);
+        for (auto& file : std::filesystem::directory_iterator(block_textures_path)) {
+            if (file.is_regular_file() && file.path().extension() == ".png") {
+                auto texture_name = file.path().stem().string();
+                printf("[%zu] Loading block texture: %s\n", i, texture_name.c_str());
+                //texture_name = texture_name.substr(0, texture_name.length() - 4);
                 printf("Loading block texture: %s\n", texture_name.c_str());
 
                 std::unique_ptr<imr::Image> texture;
                 load_texture(file.path(), texture);
                 block_textures_map[texture_name] = block_textures.size();
-        block_textures.emplace_back(std::move(texture));
-        i++;
+                block_textures.emplace_back(std::move(texture));
+                i++;
             }
         }
         printf("Loaded %zu block textures\n", block_textures.size());
@@ -325,24 +325,25 @@ int main(int argc, char **argv) {
             //printf("Looking for texture '%s'\n", texture_name.c_str());
             
             if (found != _textures.block_textures_map.end()){
-                printf("Found texture '%s' with id %d\n", texture_name.c_str(), found->second);
+                //printf("Found texture '%s' with id %d\n", texture_name.c_str(), found->second);
                 return found->second;
-                }
-            return 0;
+            }
+            return 4;
         }
 
         std::pair<uint16_t, uint8_t> get_block_texture(BlockId id, BlockFace face) override {
             switch (id) {
                 case BlockAir:break;
                 case BlockStone: return {id_safe("stone"),0};
+                case BlockCobbleStone: return {id_safe("cobblestone"),0};
                 case BlockDirt: return {id_safe("dirt"),0};
                 case BlockTallGrass:
                 case BlockGrass: {
                     if (face == TOP)
-                        return {id_safe("grass_top"),1};
+                        return {id_safe("grass_block_top"),1};
                     if (face == BOTTOM)
                         return {id_safe("dirt"),0};
-                    return {id_safe("grass_side"),1};
+                    return {id_safe("grass_block_side"),1};
                 }
                 case BlockSand: return {id_safe("sand"),0};
                 case BlockSandStone: {
@@ -353,12 +354,20 @@ int main(int argc, char **argv) {
                     return {id_safe("sandstone"),0};
                 }
                 case BlockGravel: return {id_safe("gravel"),0};
-                case BlockPlanks: return {id_safe("planks"),0};
+                case BlockPlanks: return {id_safe("oak_planks"),0};
                 case BlockWater: return {id_safe("water"),2};
-                case BlockLeaves: return {id_safe("leaves"),0};
+                case BlockLeaves: return {id_safe("azalea_leaves"),0};
                 case BlockWood: return {id_safe("wood"),0};
                 case BlockSnow: return {id_safe("snow"),0};
                 case BlockLava: return {id_safe("lava"),0};\
+                case BlockWhiteTerracotta: return {id_safe("white_terracotta"),0};
+                case BlockQuartz: {
+                    if (face == TOP)
+                        return {id_safe("quartz_block_top"),0};
+                    if (face == BOTTOM)
+                        return {id_safe("quartz_block_bottom"),0};
+                    return {id_safe("quartz_block_side"),0};
+                }
                 case BlockUnknown:break;
             }
             return {id_safe("notex"),0};

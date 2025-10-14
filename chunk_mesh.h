@@ -29,8 +29,8 @@ struct ChunkMesh
         uint8_t tt;
         uint8_t ss;
         uint8_t nnx, nny, nnz;
-        uint8_t tex_info;
-        uint8_t br, bg, bb, tex_id;
+        uint16_t tex_id;
+        uint8_t br, bg, bb, tex_info;
     };
 
     
