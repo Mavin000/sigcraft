@@ -336,6 +336,7 @@ int main(int argc, char **argv) {
                 case BlockAir:break;
                 case BlockStone: return {id_safe("stone"),0};
                 case BlockCobbleStone: return {id_safe("cobblestone"),0};
+                case BlockMossyCobbleStone: return {id_safe("mossy_cobblestone"),0};
                 case BlockDirt: return {id_safe("dirt"),0};
                 case BlockTallGrass:
                 case BlockGrass: {
@@ -343,7 +344,7 @@ int main(int argc, char **argv) {
                         return {id_safe("grass_block_top"),1};
                     if (face == BOTTOM)
                         return {id_safe("dirt"),0};
-                    return {id_safe("grass_block_side"),1};
+                    return {id_safe("grass_block_side"),0};
                 }
                 case BlockSand: return {id_safe("sand"),0};
                 case BlockSandStone: {
@@ -355,9 +356,14 @@ int main(int argc, char **argv) {
                 }
                 case BlockGravel: return {id_safe("gravel"),0};
                 case BlockPlanks: return {id_safe("oak_planks"),0};
+                case BlockBedrock: return {id_safe("bedrock"),0};
                 case BlockWater: return {id_safe("water"),2};
                 case BlockLeaves: return {id_safe("azalea_leaves"),0};
-                case BlockWood: return {id_safe("wood"),0};
+                case BlockWood: {
+                    if (face == TOP || face == BOTTOM)
+                        return {id_safe("oak_log_top"),0};
+                    return {id_safe("oak_log"),0};
+                }
                 case BlockSnow: return {id_safe("snow"),0};
                 case BlockLava: return {id_safe("lava"),0};\
                 case BlockWhiteTerracotta: return {id_safe("white_terracotta"),0};
@@ -367,6 +373,9 @@ int main(int argc, char **argv) {
                     if (face == BOTTOM)
                         return {id_safe("quartz_block_bottom"),0};
                     return {id_safe("quartz_block_side"),0};
+                }
+                case BlockSlab: {
+                    return {id_safe("oak_planks"),0};
                 }
                 case BlockUnknown:break;
             }

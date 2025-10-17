@@ -7,8 +7,13 @@ extern "C"
 #include "chunk_mesh.h"
 #include "nasl/nasl.h"
 
+#include "nlohmann/json.hpp"
+
+#include <fstream>
 #include <assert.h>
 #include <vector>
+
+using json = nlohmann::json;
 
 #define MINUS_X_FACE(V) \
 V(0, 0, 0, 0, 0, -1, 0, 0) \
@@ -119,7 +124,7 @@ v.tex_id = tid; \
 v.tex_info = tex_info; \
 add_vertex();
 
-static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex) {
+static void paste_minus_x_face(std::vector<uint8_t>& g, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex, nasl::vec3 color =  (0,0,0)) {
     auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
@@ -132,7 +137,7 @@ static void paste_minus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_X_FACE(V)
 }
 
-static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex) {
+static void paste_plus_x_face(std::vector<uint8_t>& g, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex, nasl::vec3 color = (0,0,0)) {
     auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
@@ -145,7 +150,7 @@ static void paste_plus_x_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigne
     PLUS_X_FACE(V)
 }
 
-static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex) {
+static void paste_minus_y_face(std::vector<uint8_t>& g, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex, nasl::vec3 color = (0,0,0)) {
     auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
@@ -158,7 +163,7 @@ static void paste_minus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_Y_FACE(V)
 }
 
-static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex) {
+static void paste_plus_y_face(std::vector<uint8_t>& g, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex, nasl::vec3 color = (0,0,0)) {
     auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
@@ -172,7 +177,7 @@ static void paste_plus_y_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigne
     PLUS_Y_FACE(V)
 }
 
-static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex) {
+static void paste_minus_z_face(std::vector<uint8_t>& g, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex, nasl::vec3 color = (0,0,0)) {
     auto [tid, tex_info] = tex;
     ChunkMesh::Vertex v;
     auto add_vertex = [&]()
@@ -185,7 +190,7 @@ static void paste_minus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsign
     MINUS_Z_FACE(V)
 }
 
-static void paste_plus_z_face(std::vector<uint8_t>& g, nasl::vec3 color, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex) {
+static void paste_plus_z_face(std::vector<uint8_t>& g, unsigned x, unsigned y, unsigned z, std::tuple <uint16_t, uint8_t> tex, nasl::vec3 color = (0,0,0)) {
     auto [tid, tex_info] = tex;
     float tmp[5];
     ChunkMesh::Vertex v;
@@ -251,6 +256,11 @@ void chunk_mesh(const ChunkData* chunk, ChunkNeighbors& neighbours, std::vector<
         return access_safe(c, neighbours, x, y, z) == BlockAir || (currentBlock != BlockWater && access_safe(c, neighbours, x, y, z) == BlockWater)|| (currentBlock != BlockLeaves && access_safe(c, neighbours, x, y, z) == BlockLeaves);
     };
 
+    std::ifstream f("/home/nico/sigcraft/assets/minecraft/models/block/slab.json");
+    json data = json::parse(f);
+
+
+
     *num_verts = 0;
     for (int section = 0; section < CUNK_CHUNK_SECTIONS_COUNT; section++)
     {
@@ -262,34 +272,36 @@ void chunk_mesh(const ChunkData* chunk, ChunkNeighbors& neighbours, std::vector<
                     BlockData block_data = access_safe(chunk, neighbours, x, world_y, z);
                     if (block_data != BlockAir)
                     {
-                        nasl::vec3 color;
-                        color.x = block_colors[block_data].r;
-                        color.y = block_colors[block_data].g;
-                        color.z = block_colors[block_data].b;
+
+                        
+
+                        //printf(data.empty()? "yes\n": "no\n");
+
+
                         if (shouldAddFace(chunk, x, world_y + 1, z, block_data)) {
-                            paste_plus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), TOP));
+                            paste_plus_y_face(g, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), TOP));
                             *num_verts += 6;
                         }
                         if (shouldAddFace(chunk, x, world_y - 1, z, block_data)) {
-                            paste_minus_y_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), BOTTOM));
+                            paste_minus_y_face(g, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), BOTTOM));
                             *num_verts += 6;
                         }
 
                         if (shouldAddFace(chunk, x + 1, world_y, z, block_data)) {
-                            paste_plus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), EAST));
+                            paste_plus_x_face(g, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), EAST));
                             *num_verts += 6;
                         }
                         if (shouldAddFace(chunk, x - 1, world_y, z, block_data)) {
-                            paste_minus_x_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), WEST));
+                            paste_minus_x_face(g, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), WEST));
                             *num_verts += 6;
                         }
 
                         if (shouldAddFace(chunk, x, world_y, z + 1, block_data)) {
-                            paste_plus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), SOUTH));
+                            paste_plus_z_face(g, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), SOUTH));
                             *num_verts += 6;
                         }
                         if (shouldAddFace(chunk, x, world_y, z - 1, block_data)) {
-                            paste_minus_z_face(g, color, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), NORTH));
+                            paste_minus_z_face(g, x, world_y, z, mapping.get_block_texture(static_cast<BlockId>(block_data), NORTH));
                             *num_verts += 6;
                         }
                     }

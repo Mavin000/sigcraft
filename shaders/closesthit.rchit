@@ -114,7 +114,7 @@ void main()
     vec4 albedo = texture(sampler2D(textures[nonuniformEXT(data0.tex_id)], nn), uv);
 
     if ((data0.tex_info & 1) != 0){
-        albedo.g += 1.0 - albedo.a;
+        albedo.rgb *= vec3(0.557, 0.725, 0.443);
         albedo.a = 1.0;
     }
 
